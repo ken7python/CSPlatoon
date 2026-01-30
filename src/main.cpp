@@ -27,22 +27,22 @@ public:
     }
 
     void moveRight(float a = 1.0f) {
-        if (x + radius < screenWidth) {
+        if (x + radius / 2 < screenWidth) {
             x += speedX * dt * a;
         }
     }
     void moveLeft(float a = 1.0f) {
-        if (0 < x - radius) {
+        if (0 < x - radius / 2) {
             x -= speedX * dt * a;
         }
     }
     void moveUp(float a = 1.0f) {
-        if (0 < y - radius) {
+        if (0 < y - radius / 2) {
             y -= speedY * dt * a;
         }
     }
     void moveDown(float a = 1.0f) {
-        if (y + radius < screenHeight) {
+        if (y + radius / 2 < screenHeight) {
             y += speedY * dt * a;
         }
     }
@@ -73,6 +73,28 @@ public:
 
 };
 
+const int dotSize = 5;
+class Dot {
+private:
+    int x;
+    int y;
+    int width;
+    int height;
+    Color color;
+public:
+    Dot() : Dot(0, 0) {}
+    Dot(int posX, int posY, Color c = LIGHTGRAY) {
+        x = posX;
+        y = posY;
+        width = dotSize;
+        height = dotSize;
+        color = c;
+    }
+    void Draw() {
+        DrawRectangle(x, y,width, height, color);
+    }
+};
+
 int main() {
     InitWindow(screenWidth, screenHeight, "CSplatoon");
     SetTargetFPS(60);
@@ -81,6 +103,22 @@ int main() {
 
     float p1PadX = 0;
     float p1PadY = 0;
+
+    int H = 0;
+    int W = 0;
+    const int numH = screenHeight / dotSize;
+    const int numW = screenWidth / dotSize;
+    Dot dots[numH][numW];
+    cout << "numH: " << numH << " numW: " << numW << endl;
+    while (H < numH) {
+        W = 0;
+        while (W < numW) {
+            dots[H][W] = Dot(W * dotSize, H * dotSize);
+            W++;
+        }
+        H++;
+    }
+    cout << "Dots initialized." << endl;
 
     while (!WindowShouldClose()) {
         dt = GetFrameTime();
@@ -107,6 +145,17 @@ int main() {
 
         BeginDrawing();
             ClearBackground(RAYWHITE);
+
+            H = 0;
+            while (H < numH) {
+                W = 0;
+                while (W < numW) {
+                    dots[H][W].Draw();
+                    W++;
+                }
+                H++;
+            }
+
             player1.Draw();
             // DrawText("Hello Raylib!", 280, 200, 20, DARKGRAY);
         EndDrawing();
