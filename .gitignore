@@ -1,0 +1,5 @@
+.DS_Store
+.idea/
+build/
+src/.DS_Store
+src/a.out
