@@ -129,22 +129,22 @@ void padColtrol(Player* p ,int n) {
     float PadX = 0;
     float PadY = 0;
     if (IsGamepadAvailable(n)) {
-        PadX = GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_X);
-        PadY = GetGamepadAxisMovement(0, GAMEPAD_AXIS_LEFT_Y);
+        PadX = GetGamepadAxisMovement(n, GAMEPAD_AXIS_LEFT_X);
+        PadY = GetGamepadAxisMovement(n, GAMEPAD_AXIS_LEFT_Y);
         // cout << "P1 Pad X: " << p1PadX << " Y: " << p1PadY << endl;
         p->moveX(PadX > 0.2f || PadX < -0.2f ? PadX : 0);
         p->moveY(PadY > 0.2f || PadY < -0.2f ? PadY : 0);
 
-        if (IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT)) {
+        if (IsGamepadButtonDown(n, GAMEPAD_BUTTON_LEFT_FACE_LEFT)) {
             p->moveLeft(1.0f);
         }
-        if (IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) {
+        if (IsGamepadButtonDown(n, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) {
             p->moveRight(1.0f);
         }
-        if (IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_UP)) {
+        if (IsGamepadButtonDown(n, GAMEPAD_BUTTON_LEFT_FACE_UP)) {
             p->moveUp(1.0f);
         }
-        if (IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_DOWN)) {
+        if (IsGamepadButtonDown(n, GAMEPAD_BUTTON_LEFT_FACE_DOWN)) {
             p->moveDown(1.0f);
         }
     }
@@ -155,6 +155,7 @@ int main() {
     SetTargetFPS(60);
 
     Player player1(100, 100, BLUE, SKYBLUE);
+    Player player2(screenWidth - 100, screenHeight - 100, RED, PINK);
 
 
     int H = 0;
@@ -179,6 +180,8 @@ int main() {
         dt = GetFrameTime();
 
         padColtrol(&player1, 0);
+        padColtrol(&player2, 1);
+
         if (IsKeyDown(KEY_A)) {
             player1.moveLeft();
         }
@@ -192,6 +195,19 @@ int main() {
             player1.moveDown();
         }
 
+        if (IsKeyDown(KEY_LEFT)) {
+            player2.moveLeft();
+        }
+        if (IsKeyDown(KEY_RIGHT)) {
+            player2.moveRight();
+        }
+        if (IsKeyDown(KEY_UP)) {
+            player2.moveUp();
+        }
+        if (IsKeyDown(KEY_DOWN)) {
+            player2.moveDown();
+        }
+
         BeginDrawing();
             ClearBackground(RAYWHITE);
 
@@ -200,6 +216,8 @@ int main() {
                 W = 0;
                 while (W < numW) {
                     dots[H][W].Col(&player1);
+                    dots[H][W].Col(&player2);
+
                     dots[H][W].Draw();
                     W++;
                 }
@@ -207,6 +225,7 @@ int main() {
             }
 
             player1.Draw();
+            player2.Draw();
             // DrawText("Hello Raylib!", 280, 200, 20, DARKGRAY);
         nowFPS = GetFPS();
         DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
