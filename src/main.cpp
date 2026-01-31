@@ -235,8 +235,9 @@ void initDots() {
 int main() {
     InitWindow(screenWidth, screenHeight, "CSplatoon");
     InitAudioDevice();
-    Music bgm = LoadMusicStream("assets/bgm.mp3");
+    Music opening = LoadMusicStream("assets/opening.mp3");
     Music ending = LoadMusicStream("assets/ending.mp3");
+    Music bgm = LoadMusicStream("assets/bgm.mp3");
     SetTargetFPS(60);
 
     pArg argP1 = pArg(0, SKYBLUE);
@@ -254,6 +255,7 @@ int main() {
     int pBlue;
     int pRed;
 
+    // ゲーム開始
     while (!WindowShouldClose()) {
         time = 60.0f;
         player1.setPosition(100.0f, 100.0f);
@@ -261,7 +263,10 @@ int main() {
         initDots();
 
         // タイトルシーン
+        PlayMusicStream(opening);
+        SetMusicVolume(opening, 1.5f);
         while (!WindowShouldClose()) {
+            UpdateMusicStream(opening);
             dt = GetFrameTime();
 
             padColtrol(&player1, 0);
@@ -314,6 +319,7 @@ int main() {
         player1.setPosition(100.0f, 100.0f);
         player2.setPosition(screenWidth - 100.0f, screenHeight - 100.0f);
         initDots();
+        StopMusicStream(opening);
         SetMusicPitch(bgm, 1.0f);
         PlayMusicStream(bgm);
         while (!WindowShouldClose()) {
@@ -430,6 +436,7 @@ int main() {
 
             EndDrawing();
         }
+        StopMusicStream(ending);
     }
 
     CloseWindow();
