@@ -314,8 +314,12 @@ int main() {
         player1.setPosition(100.0f, 100.0f);
         player2.setPosition(screenWidth - 100.0f, screenHeight - 100.0f);
         initDots();
+        SetMusicPitch(bgm, 1.0f);
         PlayMusicStream(bgm);
         while (!WindowShouldClose()) {
+            if (time <= 10.0f) {
+                SetMusicPitch(bgm, 1.1f);
+            }
             UpdateMusicStream(bgm);
             dt = GetFrameTime();
             time -= dt;
@@ -364,6 +368,7 @@ int main() {
 
         //　ゲーム終了シーン
         StopMusicStream(bgm);
+        SetMusicVolume(ending, 1.25f);
         PlayMusicStream(ending);
         while (!WindowShouldClose()) {
             UpdateMusicStream(ending);
