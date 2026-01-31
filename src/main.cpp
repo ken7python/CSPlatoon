@@ -3,7 +3,6 @@
 #include "raylib.h"
 #include <iostream>
 #include <vector>
-#include <cmath>
 
 using namespace std;
 
@@ -11,6 +10,23 @@ float dt;
 
 const int screenWidth = 1280;
 const int screenHeight = 720;
+
+class pArg {
+private:
+    Color color;
+    int pid;
+public:
+    int getId() {
+        return pid;
+    }
+    Color getColor() {
+        return color;
+    }
+    pArg(int id, Color c = WHITE) {
+        pid = id;
+        color = c;
+    }
+};
 
 class Player {
 private:
@@ -20,7 +36,8 @@ private:
     int speedY;
     float radius;
     Color color;
-    Color fillColor;
+    // Color fillColor;
+    pArg arg;
 
 public:
     void Draw() {
@@ -75,28 +92,31 @@ public:
         return radius;
     }
 
-    Color GetFillColor() {
-        return fillColor;
+    // Color GetFillColor() {
+    //     return arg.getColor();
+    // }
+    pArg GetArg() {
+        return arg;
     }
 
-    Player(float posx, float posy, Color c,Color fc = WHITE) {
+    Player(float posx, float posy, Color c,pArg parg) : arg(parg) {
         x = posx;
         y = posy;
-        speedX = 640.0f;
-        speedY = 640.0f;
+        speedX = 720.0f;
+        speedY = 720.0f;
         color = c;
-        fillColor = fc;
         radius = 48.0f;
     }
 };
 
-const float dotSize = 3.0f;
+const float dotSize = 5.0f;
 class Dot {
 private:
     float x;
     float y;
     float width;
     float height;
+    pArg arg;
     Color color;
     Rectangle dot;
 
@@ -107,21 +127,26 @@ private:
     }
 public:
     Dot() : Dot(0, 0) {}
-    Dot(float posX, float posY, Color c = LIGHTGRAY) {
+    Dot(float posX, float posY) : arg(-1, LIGHTGRAY) {
         x = posX;
         y = posY;
         width = dotSize;
         height = dotSize;
         dot = Rectangle{ x, y, width, height };
-        color = c;
+        // color = c;
+        // arg = pArg(-1, WHITE);
     }
     void Draw() {
-        DrawRectangleRec(dot, color);
+        DrawRectangleRec(dot, arg.getColor());
     }
     void Col(Player* p) {
         if (isHit(p)) {
-            color = p->GetFillColor();
+            // color = p->GetFillColor();
+            arg = p->GetArg();
         }
+    }
+    bool isPlayers(pArg* p) {
+        return p->getId() == arg.getId();
     }
 };
 
@@ -154,14 +179,19 @@ int main() {
     InitWindow(screenWidth, screenHeight, "CSplatoon");
     SetTargetFPS(60);
 
-    Player player1(100, 100, BLUE, SKYBLUE);
-    Player player2(screenWidth - 100, screenHeight - 100, RED, PINK);
+    pArg argP1 = pArg(0, SKYBLUE);
+    Player player1(100, 100, BLUE, argP1);
+
+    pArg argP2 = pArg(1, PINK);
+    Player player2(screenWidth - 100, screenHeight - 100, RED, argP2);
 
 
     int H = 0;
     int W = 0;
     const int numH = static_cast<int>(ceil(screenHeight / dotSize) );
     const int numW = static_cast<int>(ceil(screenWidth / dotSize) );
+    int allDots = numH * numW;
+
     vector<vector<Dot>> dots(numH, vector<Dot>(numW));
     cout << "numH: " << numH << " numW: " << numW << endl;
     while (H < numH) {
@@ -175,9 +205,17 @@ int main() {
     cout << "Dots initialized." << endl;
 
     float nowFPS = 0.0f;
+    float time = 60.0f;
+    int pBlue;
+    int pRed;
 
+    // ゲームシーン
     while (!WindowShouldClose()) {
         dt = GetFrameTime();
+        time -= dt;
+        if (time <= 0.0f) {
+            break;
+        }
 
         padColtrol(&player1, 0);
         padColtrol(&player2, 1);
@@ -211,24 +249,91 @@ int main() {
         BeginDrawing();
             ClearBackground(RAYWHITE);
 
+            pBlue = 0;
+            pRed = 0;
             H = 0;
             while (H < numH) {
                 W = 0;
                 while (W < numW) {
-                    dots[H][W].Col(&player1);
-                    dots[H][W].Col(&player2);
+                    Dot* target = &(dots[H][W]);
+                    target->Col(&player1);
+                    target->Col(&player2);
+                    target->Draw();
 
-                    dots[H][W].Draw();
+                    target->isPlayers(&argP1) ? pBlue++ : 0;
+                    target->isPlayers(&argP2) ? pRed++ : 0;
+
                     W++;
                 }
                 H++;
             }
+
+            cout << "Blue: " << pBlue << " Red: " << pRed << endl;
 
             player1.Draw();
             player2.Draw();
             // DrawText("Hello Raylib!", 280, 200, 20, DARKGRAY);
         nowFPS = GetFPS();
         DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
+        DrawText(TextFormat("Time: %.1f", time), screenWidth - 360, 10, 64, BLACK);
+
+        EndDrawing();
+    }
+
+    //　ゲーム終了シーン
+    while (!WindowShouldClose()) {
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        pBlue = 0;
+        pRed = 0;
+        H = 0;
+        while (H < numH) {
+            W = 0;
+            while (W < numW) {
+                Dot* target = &(dots[H][W]);
+                target->Col(&player1);
+                target->Col(&player2);
+                target->Draw();
+
+                target->isPlayers(&argP1) ? pBlue++ : 0;
+                target->isPlayers(&argP2) ? pRed++ : 0;
+
+                W++;
+            }
+            H++;
+        }
+
+        // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
+
+        player1.Draw();
+        player2.Draw();
+
+        nowFPS = GetFPS();
+        DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
+
+        int perBlue = (100 * pBlue) / allDots;
+        int perRed = (100 * pRed) / allDots;
+        DrawText(TextFormat("%d%%", perBlue), screenWidth / 2 - 64 - 256, screenHeight / 2 - 64, 128, BLUE);
+        DrawText("vs", screenWidth / 2 - 32, screenHeight / 2 - 32, 64, BLACK);
+        DrawText(TextFormat("%d%%", perRed ), screenWidth / 2 + 64 + 32,screenHeight / 2 - 64, 128, RED);
+        {
+            // 勝利メッセージをフォントサイズ 64 で中央に表示
+            const int winFontSize = 64;
+            const char* blueText = "BLUE WINS!";
+            const char* redText = "RED WINS!";
+            const char* drawText = "DRAW!";
+            if (perBlue > perRed) {
+                int tw = MeasureText(blueText, winFontSize);
+                DrawText(blueText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, BLUE);
+            } else if (perRed > perBlue) {
+                int tw = MeasureText(redText, winFontSize);
+                DrawText(redText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, RED);
+            } else {
+                int tw = MeasureText(drawText, winFontSize);
+                DrawText(drawText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, DARKGRAY);
+            }
+        }
 
         EndDrawing();
     }
