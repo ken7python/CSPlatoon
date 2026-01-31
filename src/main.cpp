@@ -99,6 +99,11 @@ public:
         return arg;
     }
 
+    void setPosition(float posx, float posy) {
+        x = posx;
+        y = posy;
+    }
+
     Player(float posx, float posy, Color c,pArg parg) : arg(parg) {
         x = posx;
         y = posy;
@@ -175,6 +180,58 @@ void padColtrol(Player* p ,int n) {
     }
 }
 
+void WASDcontrol(Player* p) {
+    if (IsKeyDown(KEY_A)) {
+        p->moveLeft();
+    }
+    if (IsKeyDown(KEY_D)) {
+        p->moveRight();
+    }
+    if (IsKeyDown(KEY_W)) {
+        p->moveUp();
+    }
+    if (IsKeyDown(KEY_S)) {
+        p->moveDown();
+    }
+}
+
+void ArrowControl(Player* p) {
+    if (IsKeyDown(KEY_LEFT)) {
+        p->moveLeft();
+    }
+    if (IsKeyDown(KEY_RIGHT)) {
+        p->moveRight();
+    }
+    if (IsKeyDown(KEY_UP)) {
+        p->moveUp();
+    }
+    if (IsKeyDown(KEY_DOWN)) {
+        p->moveDown();
+    }
+}
+
+int H = 0;
+int W = 0;
+const int numH = static_cast<int>(ceil(screenHeight / dotSize) );
+const int numW = static_cast<int>(ceil(screenWidth / dotSize) );
+int allDots = numH * numW;
+
+vector<vector<Dot>> dots(numH, vector<Dot>(numW));
+
+void initDots() {
+    H = 0;
+    while (H < numH) {
+        W = 0;
+        while (W < numW) {
+            dots[H][W] = Dot(static_cast<float>(W) * dotSize, static_cast<float>(H) * dotSize);
+            W++;
+            cout << "Initializing Dots: " << (H * numW + W) << "/" << allDots << "\r";
+        }
+        H++;
+    }
+    cout << "Dots initialized." << endl;
+}
+
 int main() {
     InitWindow(screenWidth, screenHeight, "CSplatoon");
     InitAudioDevice();
@@ -188,32 +245,69 @@ int main() {
     pArg argP2 = pArg(1, PINK);
     Player player2(screenWidth - 100, screenHeight - 100, RED, argP2);
 
-
-    int H = 0;
-    int W = 0;
-    const int numH = static_cast<int>(ceil(screenHeight / dotSize) );
-    const int numW = static_cast<int>(ceil(screenWidth / dotSize) );
-    int allDots = numH * numW;
-
-    vector<vector<Dot>> dots(numH, vector<Dot>(numW));
     cout << "numH: " << numH << " numW: " << numW << endl;
-    while (H < numH) {
-        W = 0;
-        while (W < numW) {
-            dots[H][W] = Dot(static_cast<float>(W) * dotSize, static_cast<float>(H) * dotSize);
-            W++;
-        }
-        H++;
-    }
-    cout << "Dots initialized." << endl;
+
+    initDots();
 
     float nowFPS = 0.0f;
     float time = 60.0f;
     int pBlue;
     int pRed;
 
-    PlayMusicStream(bgm);
+    // タイトルシーン
+    while (!WindowShouldClose()) {
+        dt = GetFrameTime();
+
+        padColtrol(&player1, 0);
+        WASDcontrol(&player1);
+
+        padColtrol(&player2, 1);
+        ArrowControl(&player2);
+
+        BeginDrawing();
+            ClearBackground(RAYWHITE);
+
+            pBlue = 0;
+            pRed = 0;
+            H = 0;
+            while (H < numH) {
+                W = 0;
+                while (W < numW) {
+                    Dot* target = &(dots[H][W]);
+                    target->Col(&player1);
+                    target->Col(&player2);
+                    target->Draw();
+
+                    target->isPlayers(&argP1) ? pBlue++ : 0;
+                    target->isPlayers(&argP2) ? pRed++ : 0;
+
+                    W++;
+                }
+                H++;
+            }
+
+            DrawText("CSplatoon", screenWidth / 2 - 200, screenHeight / 2 - 64, 64, GREEN);
+            Rectangle startBtn = Rectangle{static_cast<float>(screenWidth / 2 - 150) ,static_cast<float>(screenHeight / 2 + 64), 300.0f, 64.0f};
+            bool p1Start = CheckCollisionCircleRec(player1.GetVector(), player1.GetRadius(), startBtn);
+            bool p2Start = CheckCollisionCircleRec(player2.GetVector(), player1.GetRadius(), startBtn);
+            if (p1Start && p2Start) break;
+
+            DrawRectangleRec(startBtn, GREEN);
+            DrawText("START", screenWidth / 2 - 50, screenHeight / 2 + 80, 32, LIGHTGRAY);
+
+            // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
+
+            player1.Draw();
+            player2.Draw();
+
+        EndDrawing();
+    }
+
     // ゲームシーン
+    player1.setPosition(100.0f, 100.0f);
+    player2.setPosition(screenWidth - 100.0f, screenHeight - 100.0f);
+    initDots();
+    PlayMusicStream(bgm);
     while (!WindowShouldClose()) {
         UpdateMusicStream(bgm);
         dt = GetFrameTime();
@@ -223,34 +317,10 @@ int main() {
         }
 
         padColtrol(&player1, 0);
+        WASDcontrol(&player1);
+
         padColtrol(&player2, 1);
-
-        if (IsKeyDown(KEY_A)) {
-            player1.moveLeft();
-        }
-        if (IsKeyDown(KEY_D)) {
-            player1.moveRight();
-        }
-        if (IsKeyDown(KEY_W)) {
-            player1.moveUp();
-        }
-        if (IsKeyDown(KEY_S)) {
-            player1.moveDown();
-        }
-
-        if (IsKeyDown(KEY_LEFT)) {
-            player2.moveLeft();
-        }
-        if (IsKeyDown(KEY_RIGHT)) {
-            player2.moveRight();
-        }
-        if (IsKeyDown(KEY_UP)) {
-            player2.moveUp();
-        }
-        if (IsKeyDown(KEY_DOWN)) {
-            player2.moveDown();
-        }
-
+        ArrowControl(&player2);
         BeginDrawing();
             ClearBackground(RAYWHITE);
 
