@@ -250,21 +250,27 @@ int main() {
     initDots();
 
     float nowFPS = 0.0f;
-    float time = 60.0f;
+    float time;
     int pBlue;
     int pRed;
 
-    // タイトルシーン
     while (!WindowShouldClose()) {
-        dt = GetFrameTime();
+        time = 60.0f;
+        player1.setPosition(100.0f, 100.0f);
+        player2.setPosition(screenWidth - 100.0f, screenHeight - 100.0f);
+        initDots();
 
-        padColtrol(&player1, 0);
-        WASDcontrol(&player1);
+        // タイトルシーン
+        while (!WindowShouldClose()) {
+            dt = GetFrameTime();
 
-        padColtrol(&player2, 1);
-        ArrowControl(&player2);
+            padColtrol(&player1, 0);
+            WASDcontrol(&player1);
 
-        BeginDrawing();
+            padColtrol(&player2, 1);
+            ArrowControl(&player2);
+
+            BeginDrawing();
             ClearBackground(RAYWHITE);
 
             pBlue = 0;
@@ -292,36 +298,37 @@ int main() {
             bool p2Start = CheckCollisionCircleRec(player2.GetVector(), player1.GetRadius(), startBtn);
             if (p1Start && p2Start) break;
 
-            DrawRectangleRec(startBtn, GREEN);
-            DrawText("START", screenWidth / 2 - 50, screenHeight / 2 + 80, 32, LIGHTGRAY);
+            DrawRectangleRec(startBtn, p1Start || p2Start ? DARKGREEN : RAYWHITE)
+        ;
+            DrawText("START", screenWidth / 2 - 50, screenHeight / 2 + 80, 32, GREEN);
 
             // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
 
             player1.Draw();
             player2.Draw();
 
-        EndDrawing();
-    }
-
-    // ゲームシーン
-    player1.setPosition(100.0f, 100.0f);
-    player2.setPosition(screenWidth - 100.0f, screenHeight - 100.0f);
-    initDots();
-    PlayMusicStream(bgm);
-    while (!WindowShouldClose()) {
-        UpdateMusicStream(bgm);
-        dt = GetFrameTime();
-        time -= dt;
-        if (time <= 0.0f) {
-            break;
+            EndDrawing();
         }
 
-        padColtrol(&player1, 0);
-        WASDcontrol(&player1);
+        // ゲームシーン
+        player1.setPosition(100.0f, 100.0f);
+        player2.setPosition(screenWidth - 100.0f, screenHeight - 100.0f);
+        initDots();
+        PlayMusicStream(bgm);
+        while (!WindowShouldClose()) {
+            UpdateMusicStream(bgm);
+            dt = GetFrameTime();
+            time -= dt;
+            if (time <= 0.0f) {
+                break;
+            }
 
-        padColtrol(&player2, 1);
-        ArrowControl(&player2);
-        BeginDrawing();
+            padColtrol(&player1, 0);
+            WASDcontrol(&player1);
+
+            padColtrol(&player2, 1);
+            ArrowControl(&player2);
+            BeginDrawing();
             ClearBackground(RAYWHITE);
 
             pBlue = 0;
@@ -343,78 +350,81 @@ int main() {
                 H++;
             }
 
-            cout << "Blue: " << pBlue << " Red: " << pRed << endl;
+            // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
 
             player1.Draw();
             player2.Draw();
             // DrawText("Hello Raylib!", 280, 200, 20, DARKGRAY);
-        nowFPS = GetFPS();
-        DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
-        DrawText(TextFormat("Time: %.1f", time), screenWidth - 360, 10, 64, BLACK);
+            nowFPS = GetFPS();
+            DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
+            DrawText(TextFormat("Time: %.1f", time), screenWidth - 360, 10, 64, BLACK);
 
-        EndDrawing();
-    }
-
-    //　ゲーム終了シーン
-    StopMusicStream(bgm);
-    PlayMusicStream(ending);
-    while (!WindowShouldClose()) {
-        UpdateMusicStream(ending);
-
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-
-        pBlue = 0;
-        pRed = 0;
-        H = 0;
-        while (H < numH) {
-            W = 0;
-            while (W < numW) {
-                Dot* target = &(dots[H][W]);
-                target->Col(&player1);
-                target->Col(&player2);
-                target->Draw();
-
-                target->isPlayers(&argP1) ? pBlue++ : 0;
-                target->isPlayers(&argP2) ? pRed++ : 0;
-
-                W++;
-            }
-            H++;
+            EndDrawing();
         }
 
-        // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
+        //　ゲーム終了シーン
+        StopMusicStream(bgm);
+        PlayMusicStream(ending);
+        while (!WindowShouldClose()) {
+            UpdateMusicStream(ending);
 
-        player1.Draw();
-        player2.Draw();
+            if (IsKeyPressed(KEY_SPACE)) break;
+            BeginDrawing();
+            ClearBackground(RAYWHITE);
 
-        nowFPS = GetFPS();
-        DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
+            pBlue = 0;
+            pRed = 0;
+            H = 0;
+            while (H < numH) {
+                W = 0;
+                while (W < numW) {
+                    Dot* target = &(dots[H][W]);
+                    target->Col(&player1);
+                    target->Col(&player2);
+                    target->Draw();
 
-        int perBlue = (100 * pBlue) / allDots;
-        int perRed = (100 * pRed) / allDots;
-        DrawText(TextFormat("%d%%", perBlue), screenWidth / 2 - 64 - 256, screenHeight / 2 - 64, 128, BLUE);
-        DrawText("vs", screenWidth / 2 - 32, screenHeight / 2 - 32, 64, BLACK);
-        DrawText(TextFormat("%d%%", perRed ), screenWidth / 2 + 64 + 32,screenHeight / 2 - 64, 128, RED);
-        {
-            // 勝利メッセージをフォントサイズ 64 で中央に表示
-            const int winFontSize = 64;
-            const char* blueText = "BLUE WINS!";
-            const char* redText = "RED WINS!";
-            const char* drawText = "DRAW!";
-            if (perBlue > perRed) {
-                int tw = MeasureText(blueText, winFontSize);
-                DrawText(blueText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, BLUE);
-            } else if (perRed > perBlue) {
-                int tw = MeasureText(redText, winFontSize);
-                DrawText(redText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, RED);
-            } else {
-                int tw = MeasureText(drawText, winFontSize);
-                DrawText(drawText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, DARKGRAY);
+                    target->isPlayers(&argP1) ? pBlue++ : 0;
+                    target->isPlayers(&argP2) ? pRed++ : 0;
+
+                    W++;
+                }
+                H++;
             }
-        }
 
-        EndDrawing();
+            // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
+
+            player1.Draw();
+            player2.Draw();
+
+            nowFPS = GetFPS();
+            DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
+
+            int perBlue = (100 * pBlue) / allDots;
+            int perRed = (100 * pRed) / allDots;
+            DrawText(TextFormat("%d%%", perBlue), screenWidth / 2 - 64 - 256, screenHeight / 2 - 64, 128, BLUE);
+            DrawText("vs", screenWidth / 2 - 32, screenHeight / 2 - 32, 64, BLACK);
+            DrawText(TextFormat("%d%%", perRed ), screenWidth / 2 + 64 + 32,screenHeight / 2 - 64, 128, RED);
+            {
+                // 勝利メッセージをフォントサイズ 64 で中央に表示
+                const int winFontSize = 64;
+                const char* blueText = "BLUE WINS!";
+                const char* redText = "RED WINS!";
+                const char* drawText = "DRAW!";
+                if (perBlue > perRed) {
+                    int tw = MeasureText(blueText, winFontSize);
+                    DrawText(blueText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, BLUE);
+                } else if (perRed > perBlue) {
+                    int tw = MeasureText(redText, winFontSize);
+                    DrawText(redText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, RED);
+                } else {
+                    int tw = MeasureText(drawText, winFontSize);
+                    DrawText(drawText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, DARKGRAY);
+                }
+                DrawText("Press [SPACE] to Restart", screenWidth / 2 - 200, screenHeight - 100, 32, DARKGRAY);
+            }
+
+            EndDrawing();
+        }
     }
 
     CloseWindow();
