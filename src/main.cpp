@@ -177,6 +177,9 @@ void padColtrol(Player* p ,int n) {
 
 int main() {
     InitWindow(screenWidth, screenHeight, "CSplatoon");
+    InitAudioDevice();
+    Music bgm = LoadMusicStream("assets/bgm.mp3");
+    Music ending = LoadMusicStream("assets/ending.mp3");
     SetTargetFPS(60);
 
     pArg argP1 = pArg(0, SKYBLUE);
@@ -209,8 +212,10 @@ int main() {
     int pBlue;
     int pRed;
 
+    PlayMusicStream(bgm);
     // ゲームシーン
     while (!WindowShouldClose()) {
+        UpdateMusicStream(bgm);
         dt = GetFrameTime();
         time -= dt;
         if (time <= 0.0f) {
@@ -281,7 +286,11 @@ int main() {
     }
 
     //　ゲーム終了シーン
+    StopMusicStream(bgm);
+    PlayMusicStream(ending);
     while (!WindowShouldClose()) {
+        UpdateMusicStream(ending);
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
