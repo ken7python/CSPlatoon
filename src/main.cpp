@@ -1,5 +1,6 @@
 // cmake -S . -B build && cmake --build build
 // open build/CSplatoon.app
+// c++ main.cpp -O3 -lraylib && ./a.out
 #include "raylib.h"
 #include <iostream>
 #include <vector>
@@ -114,13 +115,13 @@ public:
     }
 };
 
-const float dotSize = 5.0f;
+const int dotSize = 4;
 class Dot {
 private:
-    float x;
-    float y;
-    float width;
-    float height;
+    int x;
+    int y;
+    // float width;
+    // float height;
     pArg arg;
     Color color;
     Rectangle dot;
@@ -132,12 +133,10 @@ private:
     }
 public:
     Dot() : Dot(0, 0) {}
-    Dot(float posX, float posY) : arg(-1, LIGHTGRAY) {
-        x = posX;
-        y = posY;
-        width = dotSize;
-        height = dotSize;
-        dot = Rectangle{ x, y, width, height };
+    Dot(int posX, int posY) : arg(-1, LIGHTGRAY) {
+        // width = dotSize;
+        // height = dotSize;
+        dot = Rectangle{ static_cast<float>(posX), static_cast<float>(posY), dotSize, dotSize };
         // color = c;
         // arg = pArg(-1, WHITE);
     }
@@ -214,6 +213,7 @@ int H = 0;
 int W = 0;
 const int numH = static_cast<int>(ceil(screenHeight / dotSize) );
 const int numW = static_cast<int>(ceil(screenWidth / dotSize) );
+
 int allDots = numH * numW;
 
 vector<vector<Dot>> dots(numH, vector<Dot>(numW));
@@ -223,9 +223,10 @@ void initDots() {
     while (H < numH) {
         W = 0;
         while (W < numW) {
-            dots[H][W] = Dot(static_cast<float>(W) * dotSize, static_cast<float>(H) * dotSize);
+            // dots[H][W] = Dot(static_cast<float>(W) * dotSize, static_cast<float>(H) * dotSize);
+            dots[H][W] = Dot(W * dotSize, H * dotSize);
             W++;
-            cout << "Initializing Dots: " << (H * numW + W) << "/" << allDots << "\r";
+            // cout << "Initializing Dots: " << (H * numW + W) << "/" << allDots << "\r";
         }
         H++;
     }
@@ -238,7 +239,7 @@ int main() {
     Music opening = LoadMusicStream("assets/opening.mp3");
     Music ending = LoadMusicStream("assets/ending.mp3");
     Music bgm = LoadMusicStream("assets/bgm.mp3");
-    SetTargetFPS(60);
+    SetTargetFPS(120);
 
     pArg argP1 = pArg(0, SKYBLUE);
     Player player1(100, 100, BLUE, argP1);
@@ -367,7 +368,7 @@ int main() {
             // DrawText("Hello Raylib!", 280, 200, 20, DARKGRAY);
             nowFPS = GetFPS();
             DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
-            DrawText(TextFormat("Time: %.1f", time), screenWidth - 360, 10, 64, BLACK);
+            DrawText(TextFormat("Time: %.2f", time), screenWidth - 360, 10, 64, BLACK);
 
             EndDrawing();
         }
