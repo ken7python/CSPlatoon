@@ -3,4 +3,5 @@
 build/
 src/.DS_Store
 src/a.out
+src/game
 src/assets
