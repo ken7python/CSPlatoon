@@ -427,6 +427,7 @@ void initDots() {
         }
         H++;
     }
+    cout << "Dots:" << allDots << endl;
     cout << "Dots initialized." << endl;
 }
 
