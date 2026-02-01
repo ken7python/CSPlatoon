@@ -4,6 +4,7 @@
 #include "raylib.h"
 #include <iostream>
 #include <vector>
+#include <raymath.h>
 
 using namespace std;
 
@@ -35,7 +36,8 @@ private:
     float y;
     float xv;
     float yv;
-    float bounceWall = 8.0f;
+    bool isBounce = false;
+    float bounceWall = 4.0f;
     int speedX;
     int speedY;
     float radius;
@@ -54,23 +56,40 @@ public:
             yv = yv * 0.8f;
         }
 
+        float bounceMax = 2000.0f;
         // 壁跳ね返り
-        if (x < 0 && xv < 0.0f) {
+        if (x < 0) {
             x = 0;
-            xv = bounceWall * (-xv);
+            xv = bounceWall * abs(xv);
+            if (bounceMax < abs(xv)) {
+                xv = bounceMax;
+            }
+            cout << "XV" << xv << endl;
         }
-        if (x > screenWidth && xv > 0.0f) {
+        if (x > screenWidth) {
             x = static_cast<float>(screenWidth);
-            xv = bounceWall * (-xv);
+            xv = -1 * bounceWall * abs(xv);
+            if (bounceMax < abs(xv)) {
+                xv = -1 * bounceMax;
+            }
+            cout << "XV" << xv << endl;
         }
 
-        if (y < 0 && yv < 0.0f) {
+        if (y < 0) {
             y = 0;
-            yv = bounceWall * (-yv);
+            yv = bounceWall * abs(yv);
+            if (bounceMax < abs(yv)) {
+                yv = bounceMax;
+            }
+            cout << "YV" << yv << endl;
         }
-        if (y > screenHeight && yv > 0.0f) {
+        if (y > screenHeight) {
             y = static_cast<float>(screenHeight);
-            yv = bounceWall * (-yv);
+            yv = -bounceWall * abs(yv);
+            if (bounceMax < abs(yv)) {
+                yv = -bounceMax;
+            }
+            cout << "YV" << yv << endl;
         }
 
         DrawCircle(GetX(), GetY(), radius, color);
@@ -121,6 +140,16 @@ public:
     int GetY() {
         return static_cast<int>(y);
     }
+    float GetXV() {
+        return xv;
+    }
+    float GetYV() {
+        return yv;
+    }
+    bool GetIsBounce() {
+        return isBounce;
+    }
+
     Vector2 GetVector() {
         return Vector2{ x, y };
     }
@@ -128,6 +157,53 @@ public:
         return radius;
     }
 
+    bool isHit(Player* p) {
+        Vector2 otherPos = p->GetVector();
+        float otherRadius = p->GetRadius();
+        return CheckCollisionCircles(GetVector(), radius, otherPos, otherRadius);
+    }
+
+    void pBounce(Player* p, Sound* coll) {
+        if (isHit(p) && !isBounce && !p->GetIsBounce()) {
+            isBounce = true;
+            p->isBounce = true;
+
+            // パターン1
+            // float bouceForce = 8.0f;
+            // Vector2 pos1 = GetVector();
+            // Vector2 pos2 = p->GetVector();
+            // Vector2 dir = Vector2Subtract(pos1, pos2);
+            // dir = Vector2Normalize(dir);
+            // moveX(dir.x * bouceForce);
+            // moveY(dir.y * bouceForce);
+            // p->moveX(-dir.x * bouceForce);
+            // p->moveY(-dir.y * bouceForce);
+
+            // パターン2
+            float dx = p->x - x;
+            float dy = p->y - y;
+            float dl = sqrt(dx*dx + dy*dy);
+            float dxu = dx / dl;
+            float dyu = dy / dl;
+
+            float dot1 = xv*(+dxu) + yv*(+dyu);
+            float dot2 = p->xv*(-dxu) + p->yv*(-dyu);
+
+            dot1 = dot1 * 1.8f;  // for Impact deform
+            dot2 = dot2 * 1.8f;  // for Impact deform
+
+            xv = 0;
+            yv = 0;
+            xv = xv + (-dxu)*dot2 - (+dxu)*dot1;
+            yv = yv + (-dyu)*dot2 - (+dyu)*dot1;
+            p->xv = p->xv + (+dxu)*dot1 - (-dxu)*dot2;
+            p->yv = p->yv + (+dyu)*dot1 - (-dyu)*dot2;
+            PlaySound(*coll);
+        } else if (!isHit(p)) {
+            isBounce = false;
+            p->isBounce = false;
+        }
+    }
     // Color GetFillColor() {
     //     return arg.getColor();
     // }
@@ -151,6 +227,20 @@ public:
         radius = 48.0f;
     }
 };
+//
+// void Bounce(Player* p1, Player* p2) {
+//     if (p1->isHit(p2)) {
+//         float bouceForce = 30.0f;
+//         Vector2 pos1 = p1->GetVector();
+//         Vector2 pos2 = p2->GetVector();
+//         Vector2 dir = Vector2Subtract(pos1, pos2);
+//         dir = Vector2Normalize(dir);
+//         p1->moveX(dir.x * bouceForce);
+//         p1->moveY(dir.y * bouceForce);
+//         p2->moveX(-dir.x * bouceForce);
+//         p2->moveY(-dir.y * bouceForce);
+//     }
+// }
 
 const int dotSize = 4;
 class Dot {
@@ -273,10 +363,13 @@ void initDots() {
 int main() {
     InitWindow(screenWidth, screenHeight, "CSplatoon");
     InitAudioDevice();
+    SetTargetFPS(120);
+
     Music opening = LoadMusicStream("assets/opening.mp3");
     Music ending = LoadMusicStream("assets/ending.mp3");
     Music bgm = LoadMusicStream("assets/bgm.mp3");
-    SetTargetFPS(120);
+    Sound coll = LoadSound("assets/coll.mp3");
+    SetSoundVolume(coll, 10.0f);
 
     pArg argP1 = pArg(0, SKYBLUE);
     Player player1(100, 100, BLUE, argP1);
@@ -309,9 +402,13 @@ int main() {
 
             padColtrol(&player1, 0);
             WASDcontrol(&player1);
+            player1.pBounce(&player2, &coll);
 
             padColtrol(&player2, 1);
             ArrowControl(&player2);
+            player2.pBounce(&player1, &coll);
+
+            // Bounce(&player1, &player2);
 
             BeginDrawing();
             ClearBackground(RAYWHITE);
@@ -373,9 +470,14 @@ int main() {
 
             padColtrol(&player1, 0);
             WASDcontrol(&player1);
+            player1.pBounce(&player2, &coll);
 
             padColtrol(&player2, 1);
             ArrowControl(&player2);
+            player2.pBounce(&player1, &coll);
+
+            // Bounce(&player1, &player2);
+
             BeginDrawing();
             ClearBackground(RAYWHITE);
 
