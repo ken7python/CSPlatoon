@@ -12,7 +12,7 @@ float dt;
 
 const int screenWidth = 1280;
 const int screenHeight = 720;
-const int bulletsMax = 3;
+const int bulletsMax = 5;
 
 class pArg {
 private:
@@ -289,10 +289,14 @@ public:
         Sound shot = LoadSound("assets/shot.mp3");
         x = pos.x;
         y = pos.y;
-        xv = enemyPos.x - pos.x;
-        yv = enemyPos.y - pos.y;
+        xv = 1.25f * (enemyPos.x - pos.x);
+        yv = 1.25f * (enemyPos.y - pos.y);
         // radius = 20.0f;
         radius = player->GetRadius() / 4.0f;
+        if (radius < 8.0f) {
+            radius = 8.0f;
+        }
+        SetSoundVolume(shot, 2.5f);
         PlaySound(shot);
     }
 };
