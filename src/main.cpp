@@ -33,6 +33,9 @@ class Player {
 private:
     float x;
     float y;
+    float xv;
+    float yv;
+    float bounceWall = 8.0f;
     int speedX;
     int speedY;
     float radius;
@@ -42,27 +45,59 @@ private:
 
 public:
     void Draw() {
+        if (abs(xv) > 0.0f) {
+            x = x + xv * dt;
+            xv = xv * 0.8f;
+        }
+        if (abs(yv) > 0.0f) {
+            y = y + yv * dt;
+            yv = yv * 0.8f;
+        }
+
+        // 壁跳ね返り
+        if (x < 0 && xv < 0.0f) {
+            x = 0;
+            xv = bounceWall * (-xv);
+        }
+        if (x > screenWidth && xv > 0.0f) {
+            x = static_cast<float>(screenWidth);
+            xv = bounceWall * (-xv);
+        }
+
+        if (y < 0 && yv < 0.0f) {
+            y = 0;
+            yv = bounceWall * (-yv);
+        }
+        if (y > screenHeight && yv > 0.0f) {
+            y = static_cast<float>(screenHeight);
+            yv = bounceWall * (-yv);
+        }
+
         DrawCircle(GetX(), GetY(), radius, color);
     }
 
     void moveRight(float a = 1.0f) {
         if (x + radius / 2 < screenWidth) {
-            x += speedX * dt * a;
+            // x += speedX * dt * a;
+            xv += speedX * a;
         }
     }
     void moveLeft(float a = 1.0f) {
         if (0 < x - radius / 2) {
-            x -= speedX * dt * a;
+            // x -= speedX * dt * a;
+            xv -= speedX * a;
         }
     }
     void moveUp(float a = 1.0f) {
         if (0 < y - radius / 2) {
-            y -= speedY * dt * a;
+            // y -= speedY * dt * a;
+            yv -= speedY * a;
         }
     }
     void moveDown(float a = 1.0f) {
         if (y + radius / 2 < screenHeight) {
-            y += speedY * dt * a;
+            // y += speedY * dt * a;
+            yv += speedY * a;
         }
     }
     void moveX(float a = 1.0f) {
@@ -108,8 +143,10 @@ public:
     Player(float posx, float posy, Color c,pArg parg) : arg(parg) {
         x = posx;
         y = posy;
-        speedX = 720.0f;
-        speedY = 720.0f;
+        xv = 0.0f;
+        yv = 0.0f;
+        speedX = 200.0f;
+        speedY = 200.0f;
         color = c;
         radius = 48.0f;
     }
