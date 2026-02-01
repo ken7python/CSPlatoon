@@ -16,6 +16,7 @@ const int screenHeight = 720;
 class pArg {
 private:
     Color color;
+    Color bColor;
     int pid;
 public:
     int getId() {
@@ -24,9 +25,13 @@ public:
     Color getColor() {
         return color;
     }
-    pArg(int id, Color c = WHITE) {
+    Color getBColor() {
+        return bColor;
+    }
+    pArg(int id, Color c = WHITE,Color bulletColor = WHITE) {
         pid = id;
         color = c;
+        bColor = bulletColor;
     }
 };
 
@@ -227,20 +232,32 @@ public:
         radius = 48.0f;
     }
 };
-//
-// void Bounce(Player* p1, Player* p2) {
-//     if (p1->isHit(p2)) {
-//         float bouceForce = 30.0f;
-//         Vector2 pos1 = p1->GetVector();
-//         Vector2 pos2 = p2->GetVector();
-//         Vector2 dir = Vector2Subtract(pos1, pos2);
-//         dir = Vector2Normalize(dir);
-//         p1->moveX(dir.x * bouceForce);
-//         p1->moveY(dir.y * bouceForce);
-//         p2->moveX(-dir.x * bouceForce);
-//         p2->moveY(-dir.y * bouceForce);
-//     }
-// }
+
+class Bullet {
+private:
+    float x;
+    float y;
+    float xv;
+    float yv;
+    float radius;
+    pArg arg;
+public:
+    void Draw() {
+        x = x + xv * dt;
+        y = y + yv * dt;
+        DrawCircle(static_cast<int>(x), static_cast<int>(y), radius, arg.getBColor());
+    }
+
+    Bullet(Player *player, Player* enemy) : arg(player->GetArg()) {
+        Vector2 pos = player->GetVector();
+        Vector2 enemyPos = enemy->GetVector();
+        x = pos.x;
+        y = pos.y;
+        xv = enemyPos.x - pos.x;
+        yv = enemyPos.y - pos.y;
+        radius = 20.0f;
+    }
+};
 
 const int dotSize = 4;
 class Dot {
@@ -371,10 +388,13 @@ int main() {
     Sound coll = LoadSound("assets/coll.mp3");
     SetSoundVolume(coll, 10.0f);
 
-    pArg argP1 = pArg(0, SKYBLUE);
+    pArg argP1 = pArg(0, SKYBLUE, DARKBLUE);
     Player player1(100, 100, BLUE, argP1);
+    vector<Bullet> bullets1;
 
-    pArg argP2 = pArg(1, PINK);
+    pArg argP2 = pArg(1, PINK, MAROON);
+    vector<Bullet> bullets2;
+
     Player player2(screenWidth - 100, screenHeight - 100, RED, argP2);
 
     cout << "numH: " << numH << " numW: " << numW << endl;
@@ -400,15 +420,22 @@ int main() {
             UpdateMusicStream(opening);
             dt = GetFrameTime();
 
+            // プレイヤー操作1
+            player1.pBounce(&player2, &coll);
             padColtrol(&player1, 0);
             WASDcontrol(&player1);
-            player1.pBounce(&player2, &coll);
+            if (IsKeyPressed(KEY_F)) {
+                bullets1.push_back(Bullet(&player1, &player2));
+            }
 
+            // プレイヤー操作2
+            player2.pBounce(&player1, &coll);
             padColtrol(&player2, 1);
             ArrowControl(&player2);
-            player2.pBounce(&player1, &coll);
+            if (IsKeyPressed(KEY_SPACE)) {
+                bullets2.push_back(Bullet(&player2, &player1));
+            }
 
-            // Bounce(&player1, &player2);
 
             BeginDrawing();
             ClearBackground(RAYWHITE);
@@ -445,7 +472,14 @@ int main() {
             // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
 
             player1.Draw();
+            for (auto& b : bullets1) {
+                b.Draw();
+            }
+
             player2.Draw();
+            for (auto& b : bullets2) {
+                b.Draw();
+            }
 
             EndDrawing();
         }
