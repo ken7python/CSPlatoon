@@ -1,6 +1,6 @@
 // cmake -S . -B build && cmake --build build
 // open build/CSplatoon.app
-// c++ main.cpp -O3 -lraylib && ./a.out
+// c++ main.cpp -O3 -o game -lraylib && ./game
 #include "raylib.h"
 #include <iostream>
 #include <vector>
