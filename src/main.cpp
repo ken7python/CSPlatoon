@@ -12,6 +12,7 @@ float dt;
 
 const int screenWidth = 1280;
 const int screenHeight = 720;
+const int bulletsMax = 3;
 
 class pArg {
 private:
@@ -220,6 +221,22 @@ public:
         x = posx;
         y = posy;
     }
+    void damage() {
+        radius = radius - 4.0f;
+        if (radius < 8.0f) {
+            radius = 8.0f;
+        }
+    }
+    void bigger() {
+        radius = radius + 4.0f;
+        if (96.0f < radius) {
+            radius = 96.0f;
+        }
+    }
+
+    void init() {
+        radius = 48.0f;
+    }
 
     Player(float posx, float posy, Color c,pArg parg) : arg(parg) {
         x = posx;
@@ -247,19 +264,40 @@ public:
         y = y + yv * dt;
         DrawCircle(static_cast<int>(x), static_cast<int>(y), radius, arg.getBColor());
     }
+    Vector2 GetVector() {
+        return Vector2{ x, y };
+    }
+    pArg GetArg() {
+        return arg;
+    }
+    float GetRadius() {
+        return radius;
+    }
+    bool isHit(Player* p) {
+        Vector2 playerPos = p->GetVector();
+        float playerRadius = p->GetRadius();
+        return CheckCollisionCircles(GetVector(), radius, playerPos, playerRadius);
+    }
+    void stop() {
+        xv = 0.0f;
+        yv = 0.0f;
+    }
 
     Bullet(Player *player, Player* enemy) : arg(player->GetArg()) {
         Vector2 pos = player->GetVector();
         Vector2 enemyPos = enemy->GetVector();
+        Sound shot = LoadSound("assets/shot.mp3");
         x = pos.x;
         y = pos.y;
         xv = enemyPos.x - pos.x;
         yv = enemyPos.y - pos.y;
-        radius = 20.0f;
+        // radius = 20.0f;
+        radius = player->GetRadius() / 4.0f;
+        PlaySound(shot);
     }
 };
 
-const int dotSize = 4;
+const int dotSize = 5;
 class Dot {
 private:
     int x;
@@ -275,6 +313,12 @@ private:
         float playerRadius = p->GetRadius();
         return CheckCollisionCircleRec(playerPos, playerRadius, dot);
     }
+    bool isHitB(Bullet *b){
+        if (b->GetArg().getId() == arg.getId()) return false;
+        Vector2 bPos = b->GetVector();
+        float bRadius = b->GetRadius();
+        return CheckCollisionCircleRec(bPos, bRadius, dot);
+    }
 public:
     Dot() : Dot(0, 0) {}
     Dot(int posX, int posY) : arg(-1, LIGHTGRAY) {
@@ -287,10 +331,15 @@ public:
     void Draw() {
         DrawRectangleRec(dot, arg.getColor());
     }
-    void Col(Player* p) {
+    void Col(Player* p, vector<Bullet>* bullets) {
         if (isHit(p)) {
             // color = p->GetFillColor();
             arg = p->GetArg();
+        }
+        for (auto& b : *bullets) {
+            if (isHitB(&b)) {
+                arg = p->GetArg();
+            }
         }
     }
     bool isPlayers(pArg* p) {
@@ -377,6 +426,28 @@ void initDots() {
     cout << "Dots initialized." << endl;
 }
 
+void DrawBullets(vector<Bullet>* bullets,Player* me,Player* enemy) {
+    for (auto& b : *bullets) {
+        Vector2 pos = b.GetVector();
+        if (b.isHit(enemy)) {
+            // 当たった弾を削除
+            bullets->erase(bullets->begin());
+            enemy->damage();
+            me->bigger();
+            continue;
+        }
+        if (pos.x < -50 || screenWidth + 50 < pos.x || pos.y < -50 || screenHeight + 50 < pos.y) {
+            // 画面外に出た弾を削除
+            bullets->erase(bullets->begin());
+            continue;
+        }
+        b.Draw();
+    }
+}
+void initBullets(vector<Bullet>* bullets) {
+    bullets->clear();
+}
+
 int main() {
     InitWindow(screenWidth, screenHeight, "CSplatoon");
     InitAudioDevice();
@@ -409,9 +480,15 @@ int main() {
     // ゲーム開始
     while (!WindowShouldClose()) {
         time = 60.0f;
+
         player1.setPosition(100.0f, 100.0f);
+        player1.init();
         player2.setPosition(screenWidth - 100.0f, screenHeight - 100.0f);
+        player2.init();
+
         initDots();
+        initBullets(&bullets1);
+        initBullets(&bullets2);
 
         // タイトルシーン
         PlayMusicStream(opening);
@@ -424,16 +501,16 @@ int main() {
             player1.pBounce(&player2, &coll);
             padColtrol(&player1, 0);
             WASDcontrol(&player1);
-            if (IsKeyPressed(KEY_F)) {
-                bullets1.push_back(Bullet(&player1, &player2));
+            if (IsKeyPressed(KEY_F) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
+                if (bullets1.size() < bulletsMax) bullets1.push_back(Bullet(&player1, &player2));
             }
 
             // プレイヤー操作2
             player2.pBounce(&player1, &coll);
             padColtrol(&player2, 1);
             ArrowControl(&player2);
-            if (IsKeyPressed(KEY_SPACE)) {
-                bullets2.push_back(Bullet(&player2, &player1));
+            if (IsKeyPressed(KEY_K) || IsGamepadButtonPressed(1, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
+                if (bullets2.size() < bulletsMax) bullets2.push_back(Bullet(&player2, &player1));
             }
 
 
@@ -447,8 +524,8 @@ int main() {
                 W = 0;
                 while (W < numW) {
                     Dot* target = &(dots[H][W]);
-                    target->Col(&player1);
-                    target->Col(&player2);
+                    target->Col(&player1, &bullets1);
+                    target->Col(&player2, &bullets2);
                     target->Draw();
 
                     target->isPlayers(&argP1) ? pBlue++ : 0;
@@ -462,7 +539,7 @@ int main() {
             DrawText("CSplatoon", screenWidth / 2 - 200, screenHeight / 2 - 64, 64, GREEN);
             Rectangle startBtn = Rectangle{static_cast<float>(screenWidth / 2 - 150) ,static_cast<float>(screenHeight / 2 + 64), 300.0f, 64.0f};
             bool p1Start = CheckCollisionCircleRec(player1.GetVector(), player1.GetRadius(), startBtn);
-            bool p2Start = CheckCollisionCircleRec(player2.GetVector(), player1.GetRadius(), startBtn);
+            bool p2Start = CheckCollisionCircleRec(player2.GetVector(), player2.GetRadius(), startBtn);
             if (p1Start && p2Start) break;
 
             DrawRectangleRec(startBtn, p1Start || p2Start ? DARKGREEN : RAYWHITE)
@@ -472,22 +549,24 @@ int main() {
             // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
 
             player1.Draw();
-            for (auto& b : bullets1) {
-                b.Draw();
-            }
+            DrawBullets(&bullets1, &player1, &player2);
 
             player2.Draw();
-            for (auto& b : bullets2) {
-                b.Draw();
-            }
+            DrawBullets(&bullets2, &player2, &player1);
 
             EndDrawing();
         }
 
         // ゲームシーン
         player1.setPosition(100.0f, 100.0f);
+        player1.init();
         player2.setPosition(screenWidth - 100.0f, screenHeight - 100.0f);
+        player2.init();
+
         initDots();
+        initBullets(&bullets1);
+        initBullets(&bullets2);
+
         StopMusicStream(opening);
         SetMusicPitch(bgm, 1.0f);
         PlayMusicStream(bgm);
@@ -502,13 +581,19 @@ int main() {
                 break;
             }
 
+            player1.pBounce(&player2, &coll);
             padColtrol(&player1, 0);
             WASDcontrol(&player1);
-            player1.pBounce(&player2, &coll);
+            if (IsKeyPressed(KEY_F) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
+                if (bullets1.size() < bulletsMax) bullets1.push_back(Bullet(&player1, &player2));
+            }
 
+            player2.pBounce(&player1, &coll);
             padColtrol(&player2, 1);
             ArrowControl(&player2);
-            player2.pBounce(&player1, &coll);
+            if (IsKeyPressed(KEY_K) || IsGamepadButtonPressed(1, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
+                if (bullets2.size() < bulletsMax) bullets2.push_back(Bullet(&player2, &player1));
+            }
 
             // Bounce(&player1, &player2);
 
@@ -522,8 +607,8 @@ int main() {
                 W = 0;
                 while (W < numW) {
                     Dot* target = &(dots[H][W]);
-                    target->Col(&player1);
-                    target->Col(&player2);
+                    target->Col(&player1, &bullets1);
+                    target->Col(&player2, &bullets2);
                     target->Draw();
 
                     target->isPlayers(&argP1) ? pBlue++ : 0;
@@ -537,7 +622,11 @@ int main() {
             // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
 
             player1.Draw();
+            DrawBullets(&bullets1,&player1,&player2);
+
             player2.Draw();
+            DrawBullets(&bullets2, &player2,&player1);
+
             // DrawText("Hello Raylib!", 280, 200, 20, DARKGRAY);
             nowFPS = GetFPS();
             DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
@@ -550,6 +639,13 @@ int main() {
         StopMusicStream(bgm);
         SetMusicVolume(ending, 1.25f);
         PlayMusicStream(ending);
+        for (auto & b : bullets1) {
+            b.stop();
+        }
+        for (auto & b : bullets2) {
+            b.stop();
+        }
+
         while (!WindowShouldClose()) {
             UpdateMusicStream(ending);
 
@@ -564,8 +660,8 @@ int main() {
                 W = 0;
                 while (W < numW) {
                     Dot* target = &(dots[H][W]);
-                    target->Col(&player1);
-                    target->Col(&player2);
+                    target->Col(&player1, &bullets1);
+                    target->Col(&player2, &bullets2);
                     target->Draw();
 
                     target->isPlayers(&argP1) ? pBlue++ : 0;
