@@ -259,6 +259,7 @@ private:
     float yv;
     float radius;
     pArg arg;
+    Sound damageSound;
 public:
     void Draw() {
         x = x + xv * dt;
@@ -283,11 +284,16 @@ public:
         xv = 0.0f;
         yv = 0.0f;
     }
+    void damage() {
+        SetSoundVolume(damageSound, 2.5f);
+        PlaySound(damageSound);
+    }
 
     Bullet(Player *player, Player* enemy) : arg(player->GetArg()) {
         Vector2 pos = player->GetVector();
         Vector2 enemyPos = enemy->GetVector();
         Sound shot = LoadSound("assets/shot.mp3");
+        damageSound = LoadSound("assets/damage.mp3");
         x = pos.x;
         y = pos.y;
         xv = 1.25f * (enemyPos.x - pos.x);
@@ -437,6 +443,7 @@ void DrawBullets(vector<Bullet>* bullets,Player* me,Player* enemy) {
         Vector2 pos = b.GetVector();
         if (b.isHit(enemy)) {
             // 当たった弾を削除
+            b.damage();
             bullets->erase(bullets->begin());
             enemy->damage();
             me->bigger();
