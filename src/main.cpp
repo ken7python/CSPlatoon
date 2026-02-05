@@ -571,6 +571,9 @@ int main() {
             player2.Draw();
             DrawBullets(&bullets2, &player2, &player1);
 
+            nowFPS = GetFPS();
+            DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
+
             EndDrawing();
         }
 
