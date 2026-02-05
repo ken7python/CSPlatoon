@@ -1,9 +1,10 @@
 // cmake -S . -B build && cmake --build build
 // open build/CSplatoon.app
-// c++ main.cpp -O3 -o game -lraylib && ./game
+// c++ main.cpp -O3 -o game -lraylib -std=c++17 && ./game
 #include "raylib.h"
 #include <iostream>
 #include <vector>
+#include <filesystem>
 #include <raymath.h>
 
 using namespace std;
@@ -454,6 +455,17 @@ void initBullets(vector<Bullet>* bullets) {
 }
 
 int main() {
+#if defined(__APPLE__)
+    {
+        // For macOS .app: ensure assets are loaded from Contents/Resources
+        std::filesystem::path appDir = GetApplicationDirectory();
+        std::filesystem::path resourcesDir = appDir / ".." / "Resources";
+        std::error_code ec;
+        if (std::filesystem::exists(resourcesDir, ec)) {
+            std::filesystem::current_path(resourcesDir, ec);
+        }
+    }
+#endif
     InitWindow(screenWidth, screenHeight, "CSplatoon");
     InitAudioDevice();
     SetTargetFPS(120);
