@@ -473,7 +473,7 @@ int main() {
         }
     }
 #endif
-    InitWindow(screenWidth, screenHeight, "CSplatoon");
+    InitWindow(screenWidth, screenHeight, "C-Spraytoon");
     InitAudioDevice();
     SetTargetFPS(120);
 
@@ -500,6 +500,9 @@ int main() {
     float time;
     int pBlue;
     int pRed;
+
+    Texture2D logo = LoadTexture("assets/logo.png");
+    Font font = LoadFontEx("assets/font.ttf", 48, 0, 0);
 
     // ゲーム開始
     while (!WindowShouldClose()) {
@@ -560,7 +563,8 @@ int main() {
                 H++;
             }
 
-            DrawText("CSplatoon", screenWidth / 2 - 200, screenHeight / 2 - 64, 64, GREEN);
+            // DrawText("C-Spraytoon", screenWidth / 2 - 200, screenHeight / 2 - 64, 64, GREEN);
+            DrawTexture(logo, screenWidth / 2 - logo.width / 2, screenHeight / 2 - logo.height / 1.5f, WHITE);
             Rectangle startBtn = Rectangle{static_cast<float>(screenWidth / 2 - 150) ,static_cast<float>(screenHeight / 2 + 64), 300.0f, 64.0f};
             bool p1Start = CheckCollisionCircleRec(player1.GetVector(), player1.GetRadius(), startBtn);
             bool p2Start = CheckCollisionCircleRec(player2.GetVector(), player2.GetRadius(), startBtn);
@@ -568,7 +572,8 @@ int main() {
 
             DrawRectangleRec(startBtn, p1Start || p2Start ? DARKGREEN : RAYWHITE)
         ;
-            DrawText("START", screenWidth / 2 - 50, screenHeight / 2 + 80, 32, GREEN);
+            // DrawText("START", screenWidth / 2 - 50, screenHeight / 2 + 80, 32, GREEN);
+            DrawTextEx(font, "Start", {screenWidth / 2 - 50,screenHeight / 2 + 80}, 32, 1, BLACK);
 
             // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
 
@@ -579,7 +584,8 @@ int main() {
             DrawBullets(&bullets2, &player2, &player1);
 
             nowFPS = GetFPS();
-            DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
+            // DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
+            DrawTextEx(font,TextFormat("FPS:%.2f", nowFPS), {10.0f,10.0f}, 20.0f, 1, BLACK);
 
             EndDrawing();
         }
@@ -656,8 +662,10 @@ int main() {
 
             // DrawText("Hello Raylib!", 280, 200, 20, DARKGRAY);
             nowFPS = GetFPS();
-            DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
-            DrawText(TextFormat("Time: %.2f", time), screenWidth - 360, 10, 64, BLACK);
+            // DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
+            DrawTextEx(font,TextFormat("FPS:%.2f", nowFPS), {10.0f,10.0f}, 20.0f, 1.0f, BLACK);
+            // DrawText(TextFormat("Time: %.2f", time), screenWidth - 360, 10, 64, BLACK);
+            DrawTextEx(font, TextFormat("Time:%.2f",time), {screenWidth - 360.0f,10.0f}, 64.0f, 1.0f, BLACK);
 
             EndDrawing();
         }
@@ -705,13 +713,19 @@ int main() {
             player2.Draw();
 
             nowFPS = GetFPS();
-            DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
+            // DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
+            DrawTextEx(font,TextFormat("FPS:%.2f", nowFPS), {10.0f,10.0f}, 20.0f, 1, BLACK);
 
             int perBlue = (100 * pBlue) / allDots;
             int perRed = (100 * pRed) / allDots;
-            DrawText(TextFormat("%d%%", perBlue), screenWidth / 2 - 64 - 256, screenHeight / 2 - 64, 128, BLUE);
-            DrawText("vs", screenWidth / 2 - 32, screenHeight / 2 - 32, 64, BLACK);
-            DrawText(TextFormat("%d%%", perRed ), screenWidth / 2 + 64 + 32,screenHeight / 2 - 64, 128, RED);
+            // DrawText(TextFormat("%d%%", perBlue), screenWidth / 2 - 64 - 256, screenHeight / 2 - 64, 128, BLUE);
+            DrawTextEx(font,TextFormat("%d%%", perBlue), {screenWidth / 2 - 64 - 256, screenHeight / 2 - 64}, 128, 1,BLUE);
+
+            // DrawText("vs", screenWidth / 2 - 32, screenHeight / 2 - 32, 64, BLACK);
+            DrawTextEx(font, "vs", {screenWidth / 2 - 32, screenHeight / 2 - 32}, 64, 1,BLACK);
+
+            // DrawText(TextFormat("%d%%", perRed ), screenWidth / 2 + 64 + 32,screenHeight / 2 - 64, 128, RED);
+            DrawTextEx(font, TextFormat("%d%%", perRed ), {screenWidth / 2 + 64 + 32,screenHeight / 2 - 64}, 128,1, RED);
             {
                 // 勝利メッセージをフォントサイズ 64 で中央に表示
                 const int winFontSize = 64;
@@ -719,16 +733,20 @@ int main() {
                 const char* redText = "RED WINS!";
                 const char* drawText = "DRAW!";
                 if (perBlue > perRed) {
-                    int tw = MeasureText(blueText, winFontSize);
-                    DrawText(blueText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, BLUE);
+                    float tw = MeasureText(blueText, winFontSize);
+                    // DrawText(blueText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, BLUE);
+                    DrawTextEx(font,blueText, {screenWidth / 2 - tw / 2, screenHeight / 2 + 64}, winFontSize, 1,BLUE);
                 } else if (perRed > perBlue) {
-                    int tw = MeasureText(redText, winFontSize);
-                    DrawText(redText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, RED);
+                    float tw = MeasureText(redText, winFontSize);
+                    // DrawText(redText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, RED);
+                    DrawTextEx(font, redText,  {screenWidth/2 - tw/2, screenHeight/2 + 64} , winFontSize, 1,RED);
                 } else {
-                    int tw = MeasureText(drawText, winFontSize);
-                    DrawText(drawText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, DARKGRAY);
+                    float tw = MeasureText(drawText, winFontSize);
+                    // DrawText(drawText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, DARKGRAY);
+                    DrawTextEx(font, drawText, {screenWidth/2 - tw/2, screenHeight/2 + 64}, winFontSize, 1,DARKGRAY);
                 }
-                DrawText("Press [SPACE] to Restart", screenWidth / 2 - 200, screenHeight - 100, 32, DARKGRAY);
+                // DrawText("Press [SPACE] to Restart", screenWidth / 2 - 200, screenHeight - 100, 32, DARKGRAY);
+                DrawTextEx(font, "Press [SPACE] to Restart", {screenWidth / 2 - 200, screenHeight - 100}, 32, 1, DARKGRAY);
             }
 
             EndDrawing();
