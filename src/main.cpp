@@ -662,29 +662,44 @@ int main() {
         }
 
         // ゲームシーン
+
+        //プレイヤー初期化
         player1.setPosition(100.0f, 100.0f);
         player1.init();
         player2.setPosition(screenWidth - 100.0f, screenHeight - 100.0f);
         player2.init();
 
+        // ドット初期化
         initDots();
+
+        // 弾初期化
         initBullets(&bullets1);
         initBullets(&bullets2);
 
+        // タイトルBGM->ゲームBGMへ
         StopMusicStream(opening);
         SetMusicPitch(bgm, 1.0f);
         PlayMusicStream(bgm);
+
+        // ゲームシーン
         while (!WindowShouldClose()) {
+            // 残り10秒以下なら、ピッチ上げ
             if (time <= 10.0f) {
                 SetMusicPitch(bgm, 1.1f);
             }
+
+            // BGM更新
             UpdateMusicStream(bgm);
+            // deltaTime更新 && 時間経過
             dt = GetFrameTime();
             time -= dt;
+
+            // タイムアップ判定
             if (time <= 0.0f) {
                 break;
             }
 
+            // プレイヤー当たり判定＆操作
             player1.pBounce(&player2, &coll);
             padColtrol(&player1, 0);
             WASDcontrol(&player1);
@@ -699,11 +714,11 @@ int main() {
                 if (bullets2.size() < bulletsMax) bullets2.push_back(Bullet(&player2, &player1));
             }
 
-            // Bounce(&player1, &player2);
-
+            //描画開始
             BeginDrawing();
             ClearBackground(RAYWHITE);
 
+            // マス描画
             pBlue = 0;
             pRed = 0;
             H = 0;
@@ -725,30 +740,34 @@ int main() {
 
             // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
 
+            // プレイヤー描画
             player1.Draw();
             DrawBullets(&bullets1,&player1,&player2);
 
             player2.Draw();
             DrawBullets(&bullets2, &player2,&player1);
 
-            // DrawText("Hello Raylib!", 280, 200, 20, DARKGRAY);
+            // FPS描画
             nowFPS = GetFPS();
             DrawTextLeftEx(font, TextFormat("FPS:%.2f", nowFPS), 10.0f,10.0f, 28.0f, BLACK);
 
-            // DrawText(TextFormat("Time: %.2f", time), screenWidth - 360, 10, 64, BLACK);
-
+            // 残り時間描画
             string timeTextJ = time <= 55 ? "ラスト:" : "あと:";
             string timeText = timeTextJ + "%.2f秒";
-            // DrawTextEx(font, TextFormat(timeText.c_str(), time), {screenWidth - 60 * 6,10.0f}, 64.0f, 1.0f, BLACK);
             DrawTextRightEx(font, TextFormat(timeText.c_str(), time), static_cast<float>(screenWidth - 20),10.0f, 64.0f, BLACK);
 
             EndDrawing();
+            // 描画終了
         }
 
         //　ゲーム終了シーン
+
+        // BGM停止->終了BGMへ
         StopMusicStream(bgm);
         SetMusicVolume(ending, 1.25f);
         PlayMusicStream(ending);
+
+        // 弾停止
         for (auto & b : bullets1) {
             b.stop();
         }
@@ -756,13 +775,19 @@ int main() {
             b.stop();
         }
 
+        // 結果発表シーン
         while (!WindowShouldClose()) {
+            // BGM更新
             UpdateMusicStream(ending);
 
+            // スペースキーでリトライ
             if (IsKeyPressed(KEY_SPACE)) break;
+
+            // 描画開始
             BeginDrawing();
             ClearBackground(RAYWHITE);
 
+            // マス描画
             pBlue = 0;
             pRed = 0;
             H = 0;
@@ -781,21 +806,21 @@ int main() {
                 }
                 H++;
             }
-
             // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
 
+            // プレイヤー描画
             player1.Draw();
             player2.Draw();
 
+            // FPS描画
             nowFPS = GetFPS();
-
-            // 試合結果描画
-            // DrawTextEx(font,TextFormat("FPS:%.2f", nowFPS), {10.0f,10.0f}, 20.0f, 1, BLACK);
             DrawTextLeftEx(font, TextFormat("FPS:%.2f", nowFPS), 10.0f,10.0f, 28.0f, BLACK);
 
+            // 試合結果描画
             int perBlue = (100 * pBlue) / allDots;
             int perRed = (100 * pRed) / allDots;
 
+            // パーセンテージ表示
             DrawTextRightEx(font, TextFormat("%d%%", perBlue), screenWidth / 2.0f - 64.0f, screenHeight / 2.0f - 64.0f, 128.0f, BLUE);
             DrawTextCenterEx(font, "vs", screenWidth / 2.0f, screenHeight / 2.0f, 64.0f, BLACK);
             DrawTextLeftEx(font, TextFormat("%d%%", perRed ), screenWidth / 2.0f + 64.0f, screenHeight / 2.0f - 64.0f, 128.0f, RED);
@@ -814,16 +839,23 @@ int main() {
                 } else {
                     DrawTextCenterEx(font, drawText, x, y, winFontSize, DARKGRAY);
                 }
-                // DrawText("Press [SPACE] to Restart", screenWidth / 2 - 200, screenHeight - 100, 32, DARKGRAY);
-                // DrawTextEx(font, "Press [SPACE] to Restart", {screenWidth / 2 - 200, screenHeight - 100}, 32, 1, DARKGRAY);
+
                 DrawTextCenterEx(font, "スペースキーでリトライ", screenWidth / 2.0f, screenHeight - 100.0f, 32.0f, DARKGRAY);
             }
             // 試合結果ここまで
-
             EndDrawing();
+            // 描画終了
         }
+        // 終了シーンここまで
         StopMusicStream(ending);
+
+        // リトライでループ先頭へ
     }
+
+    // 終了処理
+    UnloadTexture(logo);
+    UnloadFont(font);
+    CloseAudioDevice();
 
     CloseWindow();
     return 0;
