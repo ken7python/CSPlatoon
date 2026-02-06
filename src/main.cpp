@@ -1,20 +1,36 @@
+// CMakeビルドコマンド
 // cmake -S . -B build && cmake --build build
+
+// ビルド先
 // open build/CSplatoon.app
+
+// 直接コンパイルコマンド
 // c++ main.cpp -O3 -o game -lraylib -std=c++17 && ./game
+
+// 必要なライブラリ
 #include "raylib.h"
 #include <iostream>
 #include <vector>
 #include <filesystem>
 #include <raymath.h>
 
+// 名前空間
 using namespace std;
 
+// deltaTIme
 float dt;
 
+// 画面サイズ
 const int screenWidth = 1280;
 const int screenHeight = 720;
+
+// 弾の最大数
 const int bulletsMax = 5;
 
+// ドットサイズ
+const int dotSize = 5;
+
+// プレイヤー引数クラス
 class pArg {
 private:
     Color color;
@@ -37,6 +53,7 @@ public:
     }
 };
 
+// プレイヤークラス
 class Player {
 private:
     float x;
@@ -54,6 +71,7 @@ private:
 
 public:
     void Draw() {
+        // 位置更新
         if (abs(xv) > 0.0f) {
             x = x + xv * dt;
             xv = xv * 0.8f;
@@ -63,8 +81,8 @@ public:
             yv = yv * 0.8f;
         }
 
+        // 壁跳ね返り処理
         float bounceMax = 2000.0f;
-        // 壁跳ね返り
         if (x < 0) {
             x = 0;
             xv = bounceWall * abs(xv);
@@ -99,9 +117,11 @@ public:
             cout << "YV" << yv << endl;
         }
 
+        // 描画
         DrawCircle(GetX(), GetY(), radius, color);
     }
 
+    // 移動処理
     void moveRight(float a = 1.0f) {
         if (x + radius / 2 < screenWidth) {
             // x += speedX * dt * a;
@@ -141,6 +161,7 @@ public:
         }
     }
 
+    // ゲッター
     int GetX() {
         return static_cast<int>(x);
     }
@@ -156,20 +177,24 @@ public:
     bool GetIsBounce() {
         return isBounce;
     }
-
     Vector2 GetVector() {
         return Vector2{ x, y };
     }
     float GetRadius() {
         return radius;
     }
+    pArg GetArg() {
+        return arg;
+    }
 
+    // 当たり判定
     bool isHit(Player* p) {
         Vector2 otherPos = p->GetVector();
         float otherRadius = p->GetRadius();
         return CheckCollisionCircles(GetVector(), radius, otherPos, otherRadius);
     }
 
+    // プレイヤー同士の跳ね返り処理
     void pBounce(Player* p, Sound* coll) {
         if (isHit(p) && !isBounce && !p->GetIsBounce()) {
             isBounce = true;
@@ -211,17 +236,14 @@ public:
             p->isBounce = false;
         }
     }
-    // Color GetFillColor() {
-    //     return arg.getColor();
-    // }
-    pArg GetArg() {
-        return arg;
-    }
 
+    // セッター
     void setPosition(float posx, float posy) {
         x = posx;
         y = posy;
     }
+
+    // サイズ変更
     void damage() {
         radius = radius - 4.0f;
         if (radius < 8.0f) {
@@ -235,10 +257,12 @@ public:
         }
     }
 
+    // 初期化
     void init() {
         radius = 48.0f;
     }
 
+    // コンストラクタ
     Player(float posx, float posy, Color c,pArg parg) : arg(parg) {
         x = posx;
         y = posy;
@@ -251,6 +275,7 @@ public:
     }
 };
 
+// 弾クラス
 class Bullet {
 private:
     float x;
@@ -261,11 +286,14 @@ private:
     pArg arg;
     Sound damageSound;
 public:
+    // 描画と位置更新
     void Draw() {
         x = x + xv * dt;
         y = y + yv * dt;
         DrawCircle(static_cast<int>(x), static_cast<int>(y), radius, arg.getBColor());
     }
+
+    // ゲッター
     Vector2 GetVector() {
         return Vector2{ x, y };
     }
@@ -275,20 +303,27 @@ public:
     float GetRadius() {
         return radius;
     }
+
+    // 当たり判定
     bool isHit(Player* p) {
         Vector2 playerPos = p->GetVector();
         float playerRadius = p->GetRadius();
         return CheckCollisionCircles(GetVector(), radius, playerPos, playerRadius);
     }
+
+    // 弾停止
     void stop() {
         xv = 0.0f;
         yv = 0.0f;
     }
+
+    // ダメージ音再生
     void damage() {
         SetSoundVolume(damageSound, 2.5f);
         PlaySound(damageSound);
     }
 
+    // コンストラクタ
     Bullet(Player *player, Player* enemy) : arg(player->GetArg()) {
         Vector2 pos = player->GetVector();
         Vector2 enemyPos = enemy->GetVector();
@@ -308,7 +343,7 @@ public:
     }
 };
 
-const int dotSize = 5;
+// ドットクラス
 class Dot {
 private:
     int x;
@@ -319,11 +354,14 @@ private:
     Color color;
     Rectangle dot;
 
+    // プレイヤーとの当たり判定
     bool isHit(Player* p) {
         Vector2 playerPos = p->GetVector();
         float playerRadius = p->GetRadius();
         return CheckCollisionCircleRec(playerPos, playerRadius, dot);
     }
+
+    // 弾との当たり判定
     bool isHitB(Bullet *b){
         if (b->GetArg().getId() == arg.getId()) return false;
         Vector2 bPos = b->GetVector();
@@ -331,6 +369,7 @@ private:
         return CheckCollisionCircleRec(bPos, bRadius, dot);
     }
 public:
+    // コンストラクタ
     Dot() : Dot(0, 0) {}
     Dot(int posX, int posY) : arg(-1, LIGHTGRAY) {
         // width = dotSize;
@@ -339,9 +378,13 @@ public:
         // color = c;
         // arg = pArg(-1, WHITE);
     }
+
+    // 描画
     void Draw() {
         DrawRectangleRec(dot, arg.getColor());
     }
+
+    // 当たり判定と色変更
     void Col(Player* p, vector<Bullet>* bullets) {
         if (isHit(p)) {
             // color = p->GetFillColor();
@@ -353,11 +396,14 @@ public:
             }
         }
     }
+
+    // プレイヤー判定
     bool isPlayers(pArg* p) {
         return p->getId() == arg.getId();
     }
 };
 
+// コントロール関数
 void padColtrol(Player* p ,int n) {
     float PadX = 0;
     float PadY = 0;
@@ -383,6 +429,7 @@ void padColtrol(Player* p ,int n) {
     }
 }
 
+// WASDコントロール関数
 void WASDcontrol(Player* p) {
     if (IsKeyDown(KEY_A)) {
         p->moveLeft();
@@ -398,6 +445,7 @@ void WASDcontrol(Player* p) {
     }
 }
 
+// 矢印キーコントロール関数
 void ArrowControl(Player* p) {
     if (IsKeyDown(KEY_LEFT)) {
         p->moveLeft();
@@ -413,15 +461,15 @@ void ArrowControl(Player* p) {
     }
 }
 
+// ドット配列初期化
 int H = 0;
 int W = 0;
 const int numH = static_cast<int>(ceil(screenHeight / dotSize) );
 const int numW = static_cast<int>(ceil(screenWidth / dotSize) );
-
 int allDots = numH * numW;
-
 vector<vector<Dot>> dots(numH, vector<Dot>(numW));
 
+// ドット初期化関数
 void initDots() {
     H = 0;
     while (H < numH) {
@@ -438,6 +486,7 @@ void initDots() {
     cout << "Dots initialized." << endl;
 }
 
+// 弾描画関数
 void DrawBullets(vector<Bullet>* bullets,Player* me,Player* enemy) {
     for (auto& b : *bullets) {
         Vector2 pos = b.GetVector();
@@ -457,10 +506,13 @@ void DrawBullets(vector<Bullet>* bullets,Player* me,Player* enemy) {
         b.Draw();
     }
 }
+
+// 弾初期化関数
 void initBullets(vector<Bullet>* bullets) {
     bullets->clear();
 }
 
+// テキスト描画関数群
 void DrawTextCenterEx(Font font, const char* text, float x, float y, float fontSize, Color color) {
     Vector2 textPos = { x, y };
     Vector2 textSize = MeasureTextEx(font, text, fontSize, 1.0f);
@@ -481,7 +533,9 @@ void DrawTextLeftEx(Font font, const char* text, float x, float y, float fontSiz
     DrawTextEx(font, text, textPos, fontSize, 1.0f, color);
 }
 
+// main関数
 int main() {
+    // macOSアプリケーションディレクトリ取得関数
 #if defined(__APPLE__)
     {
         // For macOS .app: ensure assets are loaded from Contents/Resources
@@ -493,16 +547,19 @@ int main() {
         }
     }
 #endif
+    // 初期化
     InitWindow(screenWidth, screenHeight, "C-Spraytoon");
     InitAudioDevice();
     SetTargetFPS(120);
 
+    // BGM・効果音ロード
     Music opening = LoadMusicStream("assets/opening.mp3");
     Music ending = LoadMusicStream("assets/ending.mp3");
     Music bgm = LoadMusicStream("assets/bgm.mp3");
     Sound coll = LoadSound("assets/coll.mp3");
     SetSoundVolume(coll, 10.0f);
 
+    // プレイヤー・弾を初期化
     pArg argP1 = pArg(0, SKYBLUE, DARKBLUE);
     Player player1(100, 100, BLUE, argP1);
     vector<Bullet> bullets1;
@@ -512,17 +569,20 @@ int main() {
 
     Player player2(screenWidth - 100, screenHeight - 100, RED, argP2);
 
+    // ドット初期化
     cout << "numH: " << numH << " numW: " << numW << endl;
-
     initDots();
 
+    // 変数宣言
     float nowFPS = 0.0f;
     float time;
     int pBlue;
     int pRed;
 
+    // ロゴをロード
     Texture2D logo = LoadTexture("assets/logo.png");
-    // Font font = LoadFontEx("assets/font.ttf", 96, 0, 0);
+
+    // フォントロード
     std::vector<int> cps;
 
     // ASCII全部
@@ -558,7 +618,6 @@ int main() {
         cps.data(),
         cps.size()
     );
-
 
     if (font.texture.id == 0) {
         printf("フォントロード失敗\n");
