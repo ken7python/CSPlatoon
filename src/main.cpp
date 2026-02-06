@@ -752,9 +752,17 @@ int main() {
             DrawTextLeftEx(font, TextFormat("FPS:%.2f", nowFPS), 10.0f,10.0f, 28.0f, BLACK);
 
             // 残り時間描画
-            string timeTextJ = time <= 55 ? "ラスト:" : "あと:";
+            bool last10 = time <= 10.0f;
+            string timeTextJ = last10 ? "ラスト:" : "あと:";
             string timeText = timeTextJ + "%.2f秒";
-            DrawTextRightEx(font, TextFormat(timeText.c_str(), time), static_cast<float>(screenWidth - 20),10.0f, 64.0f, BLACK);
+            Color winnerColor = BLACK;
+            if (pBlue > pRed) {
+                winnerColor = BLUE;
+            } else if (pRed > pBlue) {
+                winnerColor = RED;
+            }
+            Color timeColor = last10 ? winnerColor : BLACK;
+            DrawTextRightEx(font, TextFormat(timeText.c_str(), time), static_cast<float>(screenWidth - 20),10.0f, 64.0f, timeColor);
 
             EndDrawing();
             // 描画終了
