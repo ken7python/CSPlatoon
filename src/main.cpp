@@ -461,6 +461,26 @@ void initBullets(vector<Bullet>* bullets) {
     bullets->clear();
 }
 
+void DrawTextCenterEx(Font font, const char* text, float x, float y, float fontSize, Color color) {
+    Vector2 textPos = { x, y };
+    Vector2 textSize = MeasureTextEx(font, text, fontSize, 1.0f);
+    textPos.x -= textSize.x / 2.0f;
+    textPos.y -= textSize.y / 2.0f;
+    DrawTextEx(font, text, textPos, fontSize, 1.0f, color);
+}
+
+void DrawTextRightEx(Font font, const char* text, float x, float y, float fontSize, Color color) {
+    Vector2 textPos = { x, y };
+    Vector2 textSize = MeasureTextEx(font, text, fontSize, 1.0f);
+    textPos.x -= textSize.x;
+    DrawTextEx(font, text, textPos, fontSize, 1.0f, color);
+}
+
+void DrawTextLeftEx(Font font, const char* text, float x, float y, float fontSize, Color color) {
+    Vector2 textPos = { x, y };
+    DrawTextEx(font, text, textPos, fontSize, 1.0f, color);
+}
+
 int main() {
 #if defined(__APPLE__)
     {
@@ -502,7 +522,43 @@ int main() {
     int pRed;
 
     Texture2D logo = LoadTexture("assets/logo.png");
-    Font font = LoadFontEx("assets/font.ttf", 48, 0, 0);
+    // Font font = LoadFontEx("assets/font.ttf", 96, 0, 0);
+    std::vector<int> cps;
+
+    // ASCII全部
+    for(int i=0x20;i<=0x7E;i++){
+        cps.push_back(i);
+    }
+
+    // ASCII（英数字・記号）
+    for(int i = 0x20; i <= 0x7E; i++){
+        cps.push_back(i);
+    }
+
+    // ひらがな
+    for(int i = 0x3040; i <= 0x309F; i++){
+        cps.push_back(i);
+    }
+
+    // カタカナ
+    for(int i = 0x30A0; i <= 0x30FF; i++){
+        cps.push_back(i);
+    }
+
+    // 「秒」だけ追加
+    cps.push_back(0x79D2);
+
+    Font font = LoadFontEx(
+        "assets/font.ttf",
+        96,
+        cps.data(),
+        cps.size()
+    );
+
+
+    if (font.texture.id == 0) {
+        printf("フォントロード失敗\n");
+    }
 
     // ゲーム開始
     while (!WindowShouldClose()) {
@@ -565,6 +621,7 @@ int main() {
 
             // DrawText("C-Spraytoon", screenWidth / 2 - 200, screenHeight / 2 - 64, 64, GREEN);
             DrawTexture(logo, screenWidth / 2 - logo.width / 2, screenHeight / 2 - logo.height / 1.5f, WHITE);
+            // DrawTextCenterEx(font, screenWidth / 2.0f, screenHeight / 2.0f - 64.0f, "C-Spraytoon", 64.0f, GREEN);
             Rectangle startBtn = Rectangle{static_cast<float>(screenWidth / 2 - 150) ,static_cast<float>(screenHeight / 2 + 64), 300.0f, 64.0f};
             bool p1Start = CheckCollisionCircleRec(player1.GetVector(), player1.GetRadius(), startBtn);
             bool p2Start = CheckCollisionCircleRec(player2.GetVector(), player2.GetRadius(), startBtn);
@@ -573,7 +630,8 @@ int main() {
             DrawRectangleRec(startBtn, p1Start || p2Start ? DARKGREEN : RAYWHITE)
         ;
             // DrawText("START", screenWidth / 2 - 50, screenHeight / 2 + 80, 32, GREEN);
-            DrawTextEx(font, "Start", {screenWidth / 2 - 50,screenHeight / 2 + 80}, 32, 1, BLACK);
+            // DrawTextEx(font, "スタート", {screenWidth / 2 - 50,screenHeight / 2 + 80}, 32, 1, BLACK);
+            DrawTextCenterEx(font, "スタート", screenWidth / 2.0f, screenHeight / 2.0f + 96.0f, 32.0f, BLACK);
 
             // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
 
@@ -585,7 +643,8 @@ int main() {
 
             nowFPS = GetFPS();
             // DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
-            DrawTextEx(font,TextFormat("FPS:%.2f", nowFPS), {10.0f,10.0f}, 20.0f, 1, BLACK);
+            // DrawTextEx(font,TextFormat("FPS:%.2f", nowFPS), {10.0f,10.0f}, 20.0f, 1, BLACK);
+            DrawTextLeftEx(font, TextFormat("FPS:%.2f", nowFPS), 10.0f,10.0f, 28.0f, BLACK);
 
             EndDrawing();
         }
@@ -662,10 +721,14 @@ int main() {
 
             // DrawText("Hello Raylib!", 280, 200, 20, DARKGRAY);
             nowFPS = GetFPS();
-            // DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
-            DrawTextEx(font,TextFormat("FPS:%.2f", nowFPS), {10.0f,10.0f}, 20.0f, 1.0f, BLACK);
+            DrawTextLeftEx(font, TextFormat("FPS:%.2f", nowFPS), 10.0f,10.0f, 28.0f, BLACK);
+
             // DrawText(TextFormat("Time: %.2f", time), screenWidth - 360, 10, 64, BLACK);
-            DrawTextEx(font, TextFormat("Time:%.2f",time), {screenWidth - 360.0f,10.0f}, 64.0f, 1.0f, BLACK);
+
+            string timeTextJ = time <= 55 ? "ラスト:" : "あと:";
+            string timeText = timeTextJ + "%.2f秒";
+            // DrawTextEx(font, TextFormat(timeText.c_str(), time), {screenWidth - 60 * 6,10.0f}, 64.0f, 1.0f, BLACK);
+            DrawTextRightEx(font, TextFormat(timeText.c_str(), time), static_cast<float>(screenWidth - 20),10.0f, 64.0f, BLACK);
 
             EndDrawing();
         }
@@ -713,41 +776,37 @@ int main() {
             player2.Draw();
 
             nowFPS = GetFPS();
-            // DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
-            DrawTextEx(font,TextFormat("FPS:%.2f", nowFPS), {10.0f,10.0f}, 20.0f, 1, BLACK);
+
+            // 試合結果描画
+            // DrawTextEx(font,TextFormat("FPS:%.2f", nowFPS), {10.0f,10.0f}, 20.0f, 1, BLACK);
+            DrawTextLeftEx(font, TextFormat("FPS:%.2f", nowFPS), 10.0f,10.0f, 28.0f, BLACK);
 
             int perBlue = (100 * pBlue) / allDots;
             int perRed = (100 * pRed) / allDots;
-            // DrawText(TextFormat("%d%%", perBlue), screenWidth / 2 - 64 - 256, screenHeight / 2 - 64, 128, BLUE);
-            DrawTextEx(font,TextFormat("%d%%", perBlue), {screenWidth / 2 - 64 - 256, screenHeight / 2 - 64}, 128, 1,BLUE);
 
-            // DrawText("vs", screenWidth / 2 - 32, screenHeight / 2 - 32, 64, BLACK);
-            DrawTextEx(font, "vs", {screenWidth / 2 - 32, screenHeight / 2 - 32}, 64, 1,BLACK);
-
-            // DrawText(TextFormat("%d%%", perRed ), screenWidth / 2 + 64 + 32,screenHeight / 2 - 64, 128, RED);
-            DrawTextEx(font, TextFormat("%d%%", perRed ), {screenWidth / 2 + 64 + 32,screenHeight / 2 - 64}, 128,1, RED);
+            DrawTextRightEx(font, TextFormat("%d%%", perBlue), screenWidth / 2.0f - 64.0f, screenHeight / 2.0f - 64.0f, 128.0f, BLUE);
+            DrawTextCenterEx(font, "vs", screenWidth / 2.0f, screenHeight / 2.0f, 64.0f, BLACK);
+            DrawTextLeftEx(font, TextFormat("%d%%", perRed ), screenWidth / 2.0f + 64.0f, screenHeight / 2.0f - 64.0f, 128.0f, RED);
             {
                 // 勝利メッセージをフォントサイズ 64 で中央に表示
                 const int winFontSize = 64;
-                const char* blueText = "BLUE WINS!";
-                const char* redText = "RED WINS!";
+                const char* blueText = "あおのかち";
+                const char* redText = "あかのかち";
                 const char* drawText = "DRAW!";
+                float x = screenWidth / 2.0f;
+                float y = screenHeight / 2.0f + 128.0f;
                 if (perBlue > perRed) {
-                    float tw = MeasureText(blueText, winFontSize);
-                    // DrawText(blueText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, BLUE);
-                    DrawTextEx(font,blueText, {screenWidth / 2 - tw / 2, screenHeight / 2 + 64}, winFontSize, 1,BLUE);
+                    DrawTextCenterEx(font, blueText, x, y, winFontSize, BLUE);
                 } else if (perRed > perBlue) {
-                    float tw = MeasureText(redText, winFontSize);
-                    // DrawText(redText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, RED);
-                    DrawTextEx(font, redText,  {screenWidth/2 - tw/2, screenHeight/2 + 64} , winFontSize, 1,RED);
+                    DrawTextCenterEx(font, redText, x, y, winFontSize, RED);
                 } else {
-                    float tw = MeasureText(drawText, winFontSize);
-                    // DrawText(drawText, screenWidth/2 - tw/2, screenHeight/2 + 64, winFontSize, DARKGRAY);
-                    DrawTextEx(font, drawText, {screenWidth/2 - tw/2, screenHeight/2 + 64}, winFontSize, 1,DARKGRAY);
+                    DrawTextCenterEx(font, drawText, x, y, winFontSize, DARKGRAY);
                 }
                 // DrawText("Press [SPACE] to Restart", screenWidth / 2 - 200, screenHeight - 100, 32, DARKGRAY);
-                DrawTextEx(font, "Press [SPACE] to Restart", {screenWidth / 2 - 200, screenHeight - 100}, 32, 1, DARKGRAY);
+                // DrawTextEx(font, "Press [SPACE] to Restart", {screenWidth / 2 - 200, screenHeight - 100}, 32, 1, DARKGRAY);
+                DrawTextCenterEx(font, "スペースキーでリトライ", screenWidth / 2.0f, screenHeight - 100.0f, 32.0f, DARKGRAY);
             }
+            // 試合結果ここまで
 
             EndDrawing();
         }
