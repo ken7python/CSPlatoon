@@ -545,6 +545,10 @@ int main() {
         cps.push_back(i);
     }
 
+    // 句読点追加
+    cps.push_back(0x3001); // 、
+    cps.push_back(0x3002); // 。
+
     // 「秒」だけ追加
     cps.push_back(0x79D2);
 
@@ -597,6 +601,7 @@ int main() {
             }
 
 
+            // マス描画
             BeginDrawing();
             ClearBackground(RAYWHITE);
 
@@ -619,22 +624,29 @@ int main() {
                 H++;
             }
 
-            // DrawText("C-Spraytoon", screenWidth / 2 - 200, screenHeight / 2 - 64, 64, GREEN);
+
+            // ロゴ描画
             DrawTexture(logo, screenWidth / 2 - logo.width / 2, screenHeight / 2 - logo.height / 1.5f, WHITE);
-            // DrawTextCenterEx(font, screenWidth / 2.0f, screenHeight / 2.0f - 64.0f, "C-Spraytoon", 64.0f, GREEN);
+
+            // スタートボタン描画
             Rectangle startBtn = Rectangle{static_cast<float>(screenWidth / 2 - 150) ,static_cast<float>(screenHeight / 2 + 64), 300.0f, 64.0f};
             bool p1Start = CheckCollisionCircleRec(player1.GetVector(), player1.GetRadius(), startBtn);
             bool p2Start = CheckCollisionCircleRec(player2.GetVector(), player2.GetRadius(), startBtn);
             if (p1Start && p2Start) break;
-
-            DrawRectangleRec(startBtn, p1Start || p2Start ? DARKGREEN : RAYWHITE)
-        ;
-            // DrawText("START", screenWidth / 2 - 50, screenHeight / 2 + 80, 32, GREEN);
-            // DrawTextEx(font, "スタート", {screenWidth / 2 - 50,screenHeight / 2 + 80}, 32, 1, BLACK);
+            DrawRectangleRec(startBtn, p1Start || p2Start ? DARKGREEN : RAYWHITE);
             DrawTextCenterEx(font, "スタート", screenWidth / 2.0f, screenHeight / 2.0f + 96.0f, 32.0f, BLACK);
 
+            //　説明描画
+            DrawTextCenterEx(font, "あそぶには、ふたりともここにとまってね", screenWidth / 2.0f, screenHeight / 2.0f + 160.0f, 24.0f, DARKGRAY);
+
+            DrawRectangle(screenWidth / 2 - 300, screenHeight - 150, 600, 125, WHITE);
+            DrawTextCenterEx(font, "P1: WASDキー + Fキー", screenWidth / 2.0f, screenHeight - 130.0f, 24.0f, BLUE);
+            DrawTextCenterEx(font, "P2: やじるしキー + Kキー", screenWidth / 2.0f, screenHeight - 100.0f, 24.0f, RED);
+            DrawTextCenterEx(font, "P1 & P2:ジョイスティックでいどう、あかボタンでシュート", screenWidth / 2.0f, screenHeight - 70.0f, 24.0f, BLACK);
+            DrawTextCenterEx(font, "たくさん、ぬりつぶしたほうが、かちだよ",screenWidth / 2.0f, screenHeight - 40.0f, 24.0f, BLACK);
             // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
 
+            // プレイヤー描画
             player1.Draw();
             DrawBullets(&bullets1, &player1, &player2);
 
