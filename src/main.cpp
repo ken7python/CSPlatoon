@@ -69,6 +69,8 @@ private:
     // Color fillColor;
     pArg arg;
 
+    float damagedTime;
+
 public:
     void Draw() {
         // 位置更新
@@ -117,8 +119,10 @@ public:
             cout << "YV" << yv << endl;
         }
 
+        damagedTime = damagedTime - dt;
+
         // 描画
-        DrawCircle(GetX(), GetY(), radius, color);
+        DrawCircle(GetX(), GetY(), radius, damagedTime > 0 ? Fade(color, 0.25) : color);
     }
 
     // 移動処理
@@ -245,6 +249,7 @@ public:
 
     // サイズ変更
     void damage() {
+        damagedTime = 0.1f;
         radius = radius - 4.0f;
         if (radius < 8.0f) {
             radius = 8.0f;
@@ -260,6 +265,8 @@ public:
     // 初期化
     void init() {
         radius = 48.0f;
+        xv = 0.0f;
+        yv = 0.0f;
     }
 
     // コンストラクタ
@@ -533,6 +540,86 @@ void DrawTextLeftEx(Font font, const char* text, float x, float y, float fontSiz
     DrawTextEx(font, text, textPos, fontSize, 1.0f, color);
 }
 
+// フェードアウト
+void FadeOut(float time) {
+    float maxTime = time;
+    while (!WindowShouldClose() ) {
+        dt = GetFrameTime();
+        time = time - dt;
+        cout << "Fade out time: " << time << "\r";
+        if (time <= 0.0f) {
+            break;
+        }
+        Color color = Fade(BLACK, 1.0f - (time / maxTime));
+        BeginDrawing();
+            ClearBackground(LIGHTGRAY);
+            DrawRectangle(0, 0, screenWidth, screenHeight, color);
+        EndDrawing();
+    }
+}
+
+void FadeOutWithBGM(float time, Music* music) {
+    float maxTime = time;
+    while (!WindowShouldClose() ) {
+        SetMusicVolume(*music, time / maxTime);
+        UpdateMusicStream(*music);
+        dt = GetFrameTime();
+        time = time - dt;
+        if (time <= 0.0f) {
+            break;
+        }
+        Color color = Fade(BLACK, 1.0f - (time / maxTime));
+        BeginDrawing();
+            ClearBackground(LIGHTGRAY);
+            DrawRectangle(0, 0, screenWidth, screenHeight, color);
+        EndDrawing();
+    }
+}
+
+void FadeIn(float time) {
+    float maxTime = time;
+    while (!WindowShouldClose() ) {
+        dt = GetFrameTime();
+        time = time - dt;
+        if (time <= 0.0f) {
+            break;
+        }
+        Color color = Fade(BLACK, time / maxTime);
+        BeginDrawing();
+            ClearBackground(LIGHTGRAY);
+            DrawRectangle(0, 0, screenWidth, screenHeight, color);
+        EndDrawing();
+    }
+}
+
+// フェードイン
+void FadeInWithBGM(float time, Music* music) {
+    float maxTime = time;
+    while (!WindowShouldClose() ) {
+        UpdateMusicStream(*music);
+        dt = GetFrameTime();
+        time = time - dt;
+        if (time <= 0.0f) {
+            break;
+        }
+        Color color = Fade(BLACK, time / maxTime);
+        BeginDrawing();
+            ClearBackground(LIGHTGRAY);
+            DrawRectangle(0, 0, screenWidth, screenHeight, color);
+        EndDrawing();
+    }
+}
+
+// シーンチェンジ関数
+void changeScene(float time) {
+    FadeOut(time / 2.0f);
+    FadeIn(time / 2.0f);
+}
+void changeSceneWithBGM(float time, Music* music) {
+    FadeOutWithBGM(time / 2.0f, music);
+    FadeInWithBGM(time / 2.0f, music);
+}
+
 // main関数
 int main() {
     // macOSアプリケーションディレクトリ取得関数
@@ -720,6 +807,53 @@ int main() {
             EndDrawing();
         }
 
+        // changeScene(1.5f);
+        FadeOutWithBGM(2.5f, &opening);
+        StopMusicStream(opening);
+        FadeIn(0.75f);
+
+        // カウントダウンシーン
+        Sound start = LoadSound("assets/start.mp3");
+        Sound countdown = LoadSound("assets/321.mp3");
+        SetSoundVolume(start, 2.5f);
+        SetSoundVolume(countdown, 2.5f);
+
+        int count = 4;
+        // bool countTextOK = false;
+        float once = 1.0f;
+        while (!WindowShouldClose()) {
+            dt = GetFrameTime();
+            once = once - dt;
+            if (once <= 0.0f) {
+                if (0 < count) {
+                    once = 1.0f;
+                    PlaySound(countdown);
+                    count = count - 1;
+                    cout << "Count: " << count << endl;
+                    if (count == 0) {
+                        cout << "Start!" << endl;
+                        PlaySound(start);
+                    }
+                }
+            }
+
+            if (count == 0 && !IsSoundPlaying(start)) {
+                break;
+            }
+
+            float fontSize = 512 * once;
+            if (fontSize < 0) {
+                fontSize = 0;
+            }
+            BeginDrawing();
+                ClearBackground(LIGHTGRAY);
+                if (3 >= count) {
+
+                    DrawTextCenterEx(font, count > 0 ? TextFormat("%d", count) : "はじめ!", screenWidth / 2.0f, screenHeight / 2.0f, fontSize, BLACK);
+                }
+            EndDrawing();
+        }
+
         // ゲームシーン
 
         //プレイヤー初期化
@@ -827,13 +961,6 @@ int main() {
             // 描画終了
         }
 
-        //　ゲーム終了シーン
-
-        // BGM停止->終了BGMへ
-        StopMusicStream(bgm);
-        SetMusicVolume(ending, 1.25f);
-        PlayMusicStream(ending);
-
         // 弾停止
         for (auto & b : bullets1) {
             b.stop();
@@ -841,6 +968,53 @@ int main() {
         for (auto & b : bullets2) {
             b.stop();
         }
+
+        //　ゲーム終了シーン
+        Sound end = LoadSound("assets/end.mp3");
+        SetSoundVolume(end, 2.5f);
+        PlaySound(end);
+        while (!WindowShouldClose()) {
+            if (!IsSoundPlaying(end)) {
+                break;
+            }
+
+            BeginDrawing();
+                // マス描画
+                pBlue = 0;
+                pRed = 0;
+                H = 0;
+                while (H < numH) {
+                    W = 0;
+                    while (W < numW) {
+                        Dot* target = &(dots[H][W]);
+                        target->Col(&player1, &bullets1);
+                        target->Col(&player2, &bullets2);
+                        target->Draw();
+
+                        target->isPlayers(&argP1) ? pBlue++ : 0;
+                        target->isPlayers(&argP2) ? pRed++ : 0;
+
+                        W++;
+                    }
+                    H++;
+                }
+                // プレイヤー描画
+                player1.Draw();
+                player2.Draw();
+
+                // テキスト描画
+                DrawTextCenterEx(font, "タイムアップ!", screenWidth / 2, screenHeight / 2.0f - 64.0f, 64.0f, BLACK);
+                // FPS描画
+                nowFPS = GetFPS();
+                DrawTextLeftEx(font, TextFormat("FPS:%.2f", nowFPS), 10.0f,10.0f, 28.0f, BLACK);
+
+            EndDrawing();
+        }
+
+        // BGM停止->終了BGMへ
+        StopMusicStream(bgm);
+        SetMusicVolume(ending, 1.25f);
+        PlayMusicStream(ending);
 
         // 結果発表シーン
         while (!WindowShouldClose()) {
