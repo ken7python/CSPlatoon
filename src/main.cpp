@@ -973,6 +973,8 @@ int main() {
         Sound end = LoadSound("assets/end.mp3");
         SetSoundVolume(end, 2.5f);
         PlaySound(end);
+
+        // タイムアップ表示シーン
         while (!WindowShouldClose()) {
             if (!IsSoundPlaying(end)) {
                 break;
@@ -1015,6 +1017,42 @@ int main() {
         StopMusicStream(bgm);
         SetMusicVolume(ending, 1.25f);
         PlayMusicStream(ending);
+
+        // 勝敗判定
+        pBlue = 0;
+        pRed = 0;
+        H = 0;
+        while (H < numH) {
+            W = 0;
+            while (W < numW) {
+                Dot* target = &(dots[H][W]);
+                target->isPlayers(&argP1) ? pBlue++ : 0;
+                target->isPlayers(&argP2) ? pRed++ : 0;
+
+                W++;
+            }
+            H++;
+        }
+        int perBlue = (100 * pBlue) / allDots;
+        int perRed = (100 * pRed) / allDots;
+        string winner;
+        if (perBlue < perRed) {
+            winner = "RED";
+        } else if (perRed < perBlue) {
+            winner = "BLUE";
+        } else {
+            winner = "DRAW!";
+        }
+        Sound redWin = LoadSound("assets/redWinner.mp3");
+        Sound blueWin = LoadSound("assets/blueWinner.mp3");
+
+        if (winner == "RED") {
+            SetSoundVolume(redWin, 2.5f);
+            PlaySound(redWin);
+        } else if (winner == "BLUE") {
+            SetSoundVolume(blueWin, 2.5f);
+            PlaySound(blueWin);
+        }
 
         // 結果発表シーン
         while (!WindowShouldClose()) {
