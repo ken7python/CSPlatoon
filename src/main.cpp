@@ -711,6 +711,7 @@ int main() {
     }
 
     // ゲーム開始
+    float volume = 0.0f;
     while (!WindowShouldClose()) {
         time = 60.0f;
 
@@ -726,9 +727,15 @@ int main() {
         // タイトルシーン
         PlayMusicStream(opening);
         SetMusicVolume(opening, 1.5f);
+        volume = 0.0f;
         while (!WindowShouldClose()) {
-            UpdateMusicStream(opening);
             dt = GetFrameTime();
+
+            if (volume < 1.0f) {
+                volume += dt / 1.5f;
+            }
+            SetMusicVolume(opening, volume);
+            UpdateMusicStream(opening);
 
             // プレイヤー操作1
             player1.pBounce(&player2, &coll);
@@ -875,11 +882,17 @@ int main() {
         PlayMusicStream(bgm);
 
         // ゲームシーン
+        volume = 0.0f;
         while (!WindowShouldClose()) {
             // 残り10秒以下なら、ピッチ上げ
             if (time <= 10.0f) {
                 SetMusicPitch(bgm, 1.1f);
             }
+            // 音量フェードイン
+            if (volume < 1.0f) {
+                volume += dt;
+            }
+            SetMusicVolume(bgm, volume);
 
             // BGM更新
             UpdateMusicStream(bgm);
@@ -1043,19 +1056,27 @@ int main() {
         } else {
             winner = "DRAW!";
         }
-        Sound redWin = LoadSound("assets/redWinner.mp3");
-        Sound blueWin = LoadSound("assets/blueWinner.mp3");
+        Sound redWin = LoadSound("assets/redWinner.wav");
+        Sound blueWin = LoadSound("assets/blueWinner.wav");
 
         if (winner == "RED") {
-            SetSoundVolume(redWin, 2.5f);
+            SetSoundVolume(redWin, 8.5f);
             PlaySound(redWin);
         } else if (winner == "BLUE") {
-            SetSoundVolume(blueWin, 2.5f);
+            SetSoundVolume(blueWin, 8.5f);
             PlaySound(blueWin);
         }
 
         // 結果発表シーン
+        volume = 0.0f;
         while (!WindowShouldClose()) {
+            // フェードイン
+            dt = GetFrameTime();
+            if (volume < 1.0f) {
+                volume += dt;
+            }
+            SetMusicVolume(ending, volume);
+
             // BGM更新
             UpdateMusicStream(ending);
 
