@@ -540,85 +540,124 @@ void DrawTextLeftEx(Font font, const char* text, float x, float y, float fontSiz
     DrawTextEx(font, text, textPos, fontSize, 1.0f, color);
 }
 
-// フェードアウト
-void FadeOut(float time) {
-    float maxTime = time;
-    while (!WindowShouldClose() ) {
-        dt = GetFrameTime();
-        time = time - dt;
-        cout << "Fade out time: " << time << "\r";
-        if (time <= 0.0f) {
-            break;
+class FadeEffect {
+private:
+    float time;
+    float maxTime;
+    bool isFadingOut;
+    bool isFadingIn;
+    Color color;
+public:
+    void Draw() {
+        if (isFadingOut) {
+            time = time - dt;
+            color = Fade(color, 1.0f - (time / maxTime));
+            if (time <= 0.0f) {
+                time = 0.0f;
+                isFadingOut = false;
+            }
+        } else if (isFadingIn) {
+            time = time - dt;
+            color = Fade(color, time / maxTime);
+            if (time <= 0.0f) {
+                time = 0.0f;
+                isFadingIn = false;
+            }
+        } else {
+            return;
         }
-        Color color = Fade(BLACK, 1.0f - (time / maxTime));
-        BeginDrawing();
-            ClearBackground(LIGHTGRAY);
-            DrawRectangle(0, 0, screenWidth, screenHeight, color);
-        EndDrawing();
+        DrawRectangle(0, 0,screenWidth,screenHeight,color);
     }
+    void fadeOut() {
+        isFadingOut = true;
+        isFadingIn = false;
+    }
+    void fadeIn() {
+        isFadingIn = true;
+        isFadingOut = false;
+    }
+    bool isFading() {
+        return time > 0.0f;
+    }
+    void init(float t, Color c = BLACK) {
+        time = t;
+        maxTime = t;
+        color = c;
+        isFadingIn = false;
+        isFadingOut = false;
+    }
+
+    FadeEffect(float t, Color c = BLACK) {
+        init(t, c);
+    }
+};
+
+void DrawExplain(Font font) {
+    //　説明描画
+    DrawTextCenterEx(font, "あそぶには、ふたりともここにとまってね", screenWidth / 2.0f, screenHeight / 2.0f + 160.0f, 24.0f, DARKGRAY);
+
+    DrawRectangle(screenWidth / 2 - 300, screenHeight - 150, 600, 125, WHITE);
+    DrawTextCenterEx(font, "P1: WASDキー + Fキー", screenWidth / 2.0f, screenHeight - 130.0f, 24.0f, BLUE);
+    DrawTextCenterEx(font, "P2: やじるしキー + Kキー", screenWidth / 2.0f, screenHeight - 100.0f, 24.0f, RED);
+    DrawTextCenterEx(font, "P1 & P2:ジョイスティックでいどう、あかボタンでシュート", screenWidth / 2.0f, screenHeight - 70.0f, 24.0f, BLACK);
+    DrawTextCenterEx(font, "たくさん、ぬりつぶしたほうが、かちだよ",screenWidth / 2.0f, screenHeight - 40.0f, 24.0f, BLACK);
 }
 
-void FadeOutWithBGM(float time, Music* music) {
-    float maxTime = time;
-    while (!WindowShouldClose() ) {
-        SetMusicVolume(*music, time / maxTime);
-        UpdateMusicStream(*music);
-        dt = GetFrameTime();
-        time = time - dt;
-        if (time <= 0.0f) {
-            break;
-        }
-        Color color = Fade(BLACK, 1.0f - (time / maxTime));
-        BeginDrawing();
-            ClearBackground(LIGHTGRAY);
-            DrawRectangle(0, 0, screenWidth, screenHeight, color);
-        EndDrawing();
-    }
+void DrawLogo(Texture2D* logo) {
+    DrawTexture(*logo, screenWidth / 2 - logo->width / 2, screenHeight / 2 - logo->height / 1.5f, WHITE);
 }
 
-void FadeIn(float time) {
-    float maxTime = time;
-    while (!WindowShouldClose() ) {
-        dt = GetFrameTime();
-        time = time - dt;
-        if (time <= 0.0f) {
-            break;
-        }
-        Color color = Fade(BLACK, time / maxTime);
-        BeginDrawing();
-            ClearBackground(LIGHTGRAY);
-            DrawRectangle(0, 0, screenWidth, screenHeight, color);
-        EndDrawing();
+class StartButton {
+private:
+    Rectangle startBtn;
+    bool p1Start;
+    bool p2Start;
+    float rectX;
+    float rectY;
+    float rectW;
+    float rectH;
+    float textX;
+    float textY;
+    float textFontSize;
+    Color textColor;
+    Font* font;
+public:
+    bool isP1Start() {
+        return p1Start;
     }
-}
-
-// フェードイン
-void FadeInWithBGM(float time, Music* music) {
-    float maxTime = time;
-    while (!WindowShouldClose() ) {
-        UpdateMusicStream(*music);
-        dt = GetFrameTime();
-        time = time - dt;
-        if (time <= 0.0f) {
-            break;
-        }
-        Color color = Fade(BLACK, time / maxTime);
-        BeginDrawing();
-            ClearBackground(LIGHTGRAY);
-            DrawRectangle(0, 0, screenWidth, screenHeight, color);
-        EndDrawing();
+    bool isP2Start() {
+        return p2Start;
     }
-}
+    void Draw() {
+        DrawRectangleRec(startBtn, p1Start || p2Start ? DARKGREEN : RAYWHITE);
+        DrawTextCenterEx(*font, "スタート", textX, textY, textFontSize, textColor);
+    }
+    void Col(Player* p1, Player* p2) {
+        p1Start = CheckCollisionCircleRec(p1->GetVector(), p1->GetRadius(), startBtn);
+        p2Start = CheckCollisionCircleRec(p2->GetVector(), p2->GetRadius(), startBtn);
+    }
+    StartButton(Font* f) {
+        // フォント継承
+        font = f;
 
-// シーンチェンジ関数
-void changeScene(float time) {
-    FadeOut(time / 2.0f);
-    FadeIn(time / 2.0f);
-}
-void changeSceneWithBGM(float time, Music* music) {
-    FadeOutWithBGM(time / 2.0f, music);
-    FadeInWithBGM(time / 2.0f, music);
-}
+        // スタートボタン位置・サイズ設定
+        rectX = static_cast<float>(screenWidth / 2 - 150);
+        rectY = static_cast<float>(screenHeight / 2 + 64);
+        rectW = 300.0f;
+        rectH = 64.0f;
+        startBtn = Rectangle{ rectX,rectY, rectW, rectH};
+
+        // テキスト位置・サイズ設定
+        textX = screenWidth / 2.0f;
+        textY = screenHeight / 2.0f + 96.0f;
+        textFontSize = 32.0f;
+        textColor = BLACK;
+    }
+    // if (p1Start && p2Start) fade_effect.fadeOut();
+    // if (!fade_effect.isFading()) {
+    //     break;
+    // }
+};
 
 // main関数
 int main() {
@@ -712,6 +751,8 @@ int main() {
 
     // ゲーム開始
     float volume = 0.0f;
+    FadeEffect fade_effect(1.0f);
+
     while (!WindowShouldClose()) {
         time = 60.0f;
 
@@ -728,6 +769,71 @@ int main() {
         PlayMusicStream(opening);
         SetMusicVolume(opening, 1.5f);
         volume = 0.0f;
+
+        // タイトルシーン　フェードアウト
+        fade_effect.init(1.5f);
+        fade_effect.fadeIn();
+        StartButton startButton(&font);
+        while (!WindowShouldClose()) {
+            dt = GetFrameTime();
+
+            if (volume < 1.0f) {
+                volume += dt / 1.5f;
+            }
+            SetMusicVolume(opening, volume);
+            UpdateMusicStream(opening);
+
+            if (!fade_effect.isFading()) {
+                break;
+            }
+            // マス描画
+            BeginDrawing();
+
+            ClearBackground(RAYWHITE);
+
+            pBlue = 0;
+            pRed = 0;
+            H = 0;
+            while (H < numH) {
+                W = 0;
+                while (W < numW) {
+                    Dot* target = &(dots[H][W]);
+                    target->Draw();
+                    W++;
+                }
+                H++;
+            }
+
+            // ロゴ描画
+            DrawLogo(&logo);
+
+            // スタートボタン描画
+            if (!fade_effect.isFading()) {
+                break;
+            }
+            startButton.Col(&player1, &player2);
+            startButton.Draw();
+
+            //　説明描画
+            DrawExplain(font);
+
+            // プレイヤー描画
+            player1.Draw();
+            DrawBullets(&bullets1, &player1, &player2);
+
+            player2.Draw();
+            DrawBullets(&bullets2, &player2, &player1);
+
+            nowFPS = GetFPS();
+            // DrawText(TextFormat("FPS: %.2f", nowFPS), 10, 10, 20, BLACK);
+            // DrawTextEx(font,TextFormat("FPS:%.2f", nowFPS), {10.0f,10.0f}, 20.0f, 1, BLACK);
+            DrawTextLeftEx(font, TextFormat("FPS:%.2f", nowFPS), 10.0f,10.0f, 28.0f, BLACK);
+
+            fade_effect.Draw();
+            EndDrawing();
+        }
+
+        fade_effect.init(1.5f);
         while (!WindowShouldClose()) {
             dt = GetFrameTime();
 
@@ -753,9 +859,9 @@ int main() {
                 if (bullets2.size() < bulletsMax) bullets2.push_back(Bullet(&player2, &player1));
             }
 
-
             // マス描画
             BeginDrawing();
+
             ClearBackground(RAYWHITE);
 
             pBlue = 0;
@@ -779,25 +885,18 @@ int main() {
 
 
             // ロゴ描画
-            DrawTexture(logo, screenWidth / 2 - logo.width / 2, screenHeight / 2 - logo.height / 1.5f, WHITE);
+            DrawLogo(&logo);
 
             // スタートボタン描画
-            Rectangle startBtn = Rectangle{static_cast<float>(screenWidth / 2 - 150) ,static_cast<float>(screenHeight / 2 + 64), 300.0f, 64.0f};
-            bool p1Start = CheckCollisionCircleRec(player1.GetVector(), player1.GetRadius(), startBtn);
-            bool p2Start = CheckCollisionCircleRec(player2.GetVector(), player2.GetRadius(), startBtn);
-            if (p1Start && p2Start) break;
-            DrawRectangleRec(startBtn, p1Start || p2Start ? DARKGREEN : RAYWHITE);
-            DrawTextCenterEx(font, "スタート", screenWidth / 2.0f, screenHeight / 2.0f + 96.0f, 32.0f, BLACK);
+            startButton.Col(&player1, &player2);
+            if (startButton.isP1Start() && startButton.isP2Start()) fade_effect.fadeOut();
+            if (!fade_effect.isFading()) {
+                break;
+            }
 
+            startButton.Draw();
             //　説明描画
-            DrawTextCenterEx(font, "あそぶには、ふたりともここにとまってね", screenWidth / 2.0f, screenHeight / 2.0f + 160.0f, 24.0f, DARKGRAY);
-
-            DrawRectangle(screenWidth / 2 - 300, screenHeight - 150, 600, 125, WHITE);
-            DrawTextCenterEx(font, "P1: WASDキー + Fキー", screenWidth / 2.0f, screenHeight - 130.0f, 24.0f, BLUE);
-            DrawTextCenterEx(font, "P2: やじるしキー + Kキー", screenWidth / 2.0f, screenHeight - 100.0f, 24.0f, RED);
-            DrawTextCenterEx(font, "P1 & P2:ジョイスティックでいどう、あかボタンでシュート", screenWidth / 2.0f, screenHeight - 70.0f, 24.0f, BLACK);
-            DrawTextCenterEx(font, "たくさん、ぬりつぶしたほうが、かちだよ",screenWidth / 2.0f, screenHeight - 40.0f, 24.0f, BLACK);
-            // cout << "Blue: " << pBlue << " Red: " << pRed << endl;
+            DrawExplain(font);
 
             // プレイヤー描画
             player1.Draw();
@@ -811,13 +910,9 @@ int main() {
             // DrawTextEx(font,TextFormat("FPS:%.2f", nowFPS), {10.0f,10.0f}, 20.0f, 1, BLACK);
             DrawTextLeftEx(font, TextFormat("FPS:%.2f", nowFPS), 10.0f,10.0f, 28.0f, BLACK);
 
+            fade_effect.Draw();
             EndDrawing();
         }
-
-        // changeScene(1.5f);
-        FadeOutWithBGM(2.5f, &opening);
-        StopMusicStream(opening);
-        FadeIn(0.75f);
 
         // カウントダウンシーン
         Sound start = LoadSound("assets/start.mp3");
@@ -828,18 +923,24 @@ int main() {
         int count = 4;
         // bool countTextOK = false;
         float once = 1.0f;
+        fade_effect.init(1.5f);
+        fade_effect.fadeIn();
+
         while (!WindowShouldClose()) {
             dt = GetFrameTime();
-            once = once - dt;
-            if (once <= 0.0f) {
-                if (0 < count) {
-                    once = 1.0f;
-                    PlaySound(countdown);
-                    count = count - 1;
-                    cout << "Count: " << count << endl;
-                    if (count == 0) {
-                        cout << "Start!" << endl;
-                        PlaySound(start);
+
+            if (!fade_effect.isFading()) {
+                once = once - dt;
+                if (once <= 0.0f) {
+                    if (0 < count) {
+                        once = 1.0f;
+                        PlaySound(countdown);
+                        count = count - 1;
+                        cout << "Count: " << count << endl;
+                        if (count == 0) {
+                            cout << "Start!" << endl;
+                            PlaySound(start);
+                        }
                     }
                 }
             }
@@ -854,10 +955,12 @@ int main() {
             }
             BeginDrawing();
                 ClearBackground(LIGHTGRAY);
-                if (3 >= count) {
-
-                    DrawTextCenterEx(font, count > 0 ? TextFormat("%d", count) : "はじめ!", screenWidth / 2.0f, screenHeight / 2.0f, fontSize, BLACK);
+                if (!fade_effect.isFading()) {
+                    if (3 >= count) {
+                        DrawTextCenterEx(font, count > 0 ? TextFormat("%d", count) : "はじめ!", screenWidth / 2.0f, screenHeight / 2.0f, fontSize, BLACK);
+                    }
                 }
+                fade_effect.Draw();
             EndDrawing();
         }
 
@@ -1068,6 +1171,10 @@ int main() {
         }
 
         // 結果発表シーン
+
+        fade_effect.init(1.5f);
+        // fade_effect.fadeIn();
+
         volume = 0.0f;
         while (!WindowShouldClose()) {
             // フェードイン
@@ -1081,7 +1188,13 @@ int main() {
             UpdateMusicStream(ending);
 
             // スペースキーでリトライ
-            if (IsKeyPressed(KEY_SPACE)) break;
+            if (IsKeyPressed(KEY_SPACE)) {
+                // fade_effect.init(1.5f);
+                fade_effect.fadeOut();
+            }
+            if (!fade_effect.isFading()) {
+                break;
+            }
 
             // 描画開始
             BeginDrawing();
@@ -1143,6 +1256,8 @@ int main() {
                 DrawTextCenterEx(font, "スペースキーでリトライ", screenWidth / 2.0f, screenHeight - 100.0f, 32.0f, DARKGRAY);
             }
             // 試合結果ここまで
+
+            fade_effect.Draw();
             EndDrawing();
             // 描画終了
         }
