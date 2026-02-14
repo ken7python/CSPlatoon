@@ -251,8 +251,8 @@ public:
     void damage() {
         damagedTime = 0.1f;
         radius = radius - 4.0f;
-        if (radius < 8.0f) {
-            radius = 8.0f;
+        if (radius < 16.0f) {
+            radius = 12.0f;
         }
     }
     void bigger() {
@@ -1171,6 +1171,9 @@ int main() {
         }
 
         // 結果発表シーン
+        Sound sRetry = LoadSound("assets/Retry.mp3");
+        SetSoundVolume(sRetry, 2.5f);
+        bool isPlaySoundRetry = false;
 
         fade_effect.init(1.5f);
         // fade_effect.fadeIn();
@@ -1186,6 +1189,15 @@ int main() {
 
             // BGM更新
             UpdateMusicStream(ending);
+
+            // リトライ音
+            if (!isPlaySoundRetry) {
+                bool isPlayRes = IsSoundPlaying(redWin) || IsSoundPlaying(blueWin);
+                if (!isPlayRes) {
+                    PlaySound(sRetry);
+                    isPlaySoundRetry = true;
+                }
+            }
 
             // スペースキーでリトライ
             if (IsKeyPressed(KEY_SPACE)) {
