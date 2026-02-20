@@ -13,6 +13,7 @@
 #include <vector>
 #include <filesystem>
 #include <raymath.h>
+#include <cmath>
 
 // 名前空間
 using namespace std;
@@ -290,6 +291,7 @@ private:
     float xv;
     float yv;
     float radius;
+    float speed;
     pArg arg;
     Sound damageSound;
 public:
@@ -338,8 +340,13 @@ public:
         damageSound = LoadSound("assets/damage.mp3");
         x = pos.x;
         y = pos.y;
-        xv = 1.25f * (enemyPos.x - pos.x);
-        yv = 1.25f * (enemyPos.y - pos.y);
+        float disX = enemyPos.x - pos.x;
+        float disY = enemyPos.y - pos.y;
+        float hypoten = sqrt(disX * disX + disY * disY);
+        speed = 1000;
+        xv = speed * (disX / hypoten);
+        yv = speed * (disY / hypoten);
+
         // radius = 20.0f;
         radius = player->GetRadius() / 4.0f;
         if (radius < 8.0f) {
