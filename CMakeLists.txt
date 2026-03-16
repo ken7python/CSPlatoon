@@ -71,12 +71,20 @@ if (EMSCRIPTEN)
 
 else()
     # ------------------------------------------------------------------
-    # macOS / Desktop ビルド
+    # macOS / Windows / Desktop ビルド
     # ビルド方法:
     #   cmake -S . -B build && cmake --build build
-    # 成果物: build/CSplatoon.app
+    # 成果物(macOS): build/CSplatoon.app
+    # 成果物(Windows): build/Release/CSplatoon.exe  (+ assets/)
     # ------------------------------------------------------------------
-    add_executable(CSplatoon MACOSX_BUNDLE src/main.cpp)
+
+    if (WIN32)
+        # WIN32 フラグ: コンソールウィンドウを表示しない GUI サブシステム
+        add_executable(CSplatoon WIN32 src/main.cpp)
+    else()
+        add_executable(CSplatoon MACOSX_BUNDLE src/main.cpp)
+    endif()
+
     target_link_libraries(CSplatoon PRIVATE raylib)
 
     # Default to Release when no build type is specified (single-config generators)
@@ -85,9 +93,19 @@ else()
     endif()
 
     # Optimize in Release
-    target_compile_options(CSplatoon PRIVATE
-        $<$<CONFIG:Release>:-O3>
-    )
+    if (MSVC)
+        target_compile_options(CSplatoon PRIVATE
+            $<$<CONFIG:Release>:/O2 /GL>
+        )
+        target_link_options(CSplatoon PRIVATE
+            $<$<CONFIG:Release>:/LTCG>
+        )
+    else()
+        target_compile_options(CSplatoon PRIVATE
+            $<$<CONFIG:Release>:-O3>
+        )
+    endif()
+
     target_compile_definitions(CSplatoon PRIVATE
         $<$<CONFIG:Release>:NDEBUG>
     )

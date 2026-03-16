@@ -2,6 +2,11 @@
 
 ローカル2人対戦の簡易スプラトゥーン風ゲームです（ウィンドウタイトル: **C-Spraytoon**）。プレイヤー（円）と弾でフィールドのドットを自色に塗り、制限時間内により多くの面積を確保した方が勝利します。
 
+**デプロイ先**
+
+https://pages.kencode.jp/CSPlatoon
+
+
 **特徴**
 - 2人同時プレイ（同一画面 1280x720、120FPS）
 - ドット塗りによる陣取り（5x5ピクセルのグリッド）
@@ -36,25 +41,102 @@
 4. タイムアップ: 「タイムアップ!」表示
 5. リザルト: 塗り割合（%）と勝者を表示。`Space` でリスタート
 
-**ビルド & 実行（CMake）**
+**ビルド & 実行**
+
+### macOS（デスクトップ）
+
 ```bash
 cmake -S . -B build
 cmake --build build
-```
-
-macOS では `.app` を起動できます。
-```bash
 open build/CSplatoon.app
 ```
 
+または付属スクリプトを使用:
+```bash
+sh buildMac.sh
+```
+
 **実行時の注意**
-- 音声ファイルは `assets/` を相対パスで読み込むため、実行時のカレントディレクトリに `assets/` が必要です。
-- CMake ビルドでは `.app` の Resources に `assets/` をコピーする設定が入っています。もし単体バイナリを起動する場合は、`src/assets` を実行ディレクトリ直下に `assets/` として配置してください。
+- CMake ビルドでは `.app` の Resources に `assets/` が自動コピーされます。
+- 単体バイナリを起動する場合は、`src/assets` を実行ディレクトリ直下に `assets/` として配置してください。
+
+---
+
+### Windows
+
+#### 必要環境
+- CMake 3.25 以上
+- Visual Studio 2022（Desktop development with C++ ワークロード）または MinGW-w64 + Ninja
+
+#### ビルド手順（Visual Studio / MSVC）
+
+```bat
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+```
+
+または付属スクリプトを使用:
+```bat
+buildWin.bat
+```
+
+成果物は `build\Release\` に生成されます:
+- `CSplatoon.exe`
+- `assets\`（自動コピー済み）
+
+実行:
+```bat
+build\Release\CSplatoon.exe
+```
+
+#### MinGW-w64 + Ninja を使う場合
+
+```bat
+cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release ^
+      -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+cmake --build build
+```
+
+> **注意:** `WIN32` サブシステムが CMakeLists.txt で設定済みのためコンソールウィンドウは表示されません。デバッグ時は `-DCMAKE_BUILD_TYPE=Debug` を使ってください。
+
+---
+
+### Web（Emscripten）
+
+#### 必要環境
+- [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html) をインストール・アクティベート済みであること
+
+#### ビルド手順
+
+```bash
+emcmake cmake -S . -B build-web
+cmake --build build-web
+```
+
+または付属スクリプトを使用（`build-web/` を一旦削除してからビルド）:
+```bash
+./buildWeb.sh
+```
+
+成果物は `build-web/` に生成されます:
+- `index.html` / `index.js` / `index.wasm` / `index.data`
+
+#### ローカルで動作確認
+
+```bash
+cd build-web
+python3 -m http.server 8080
+# ブラウザで http://localhost:8080 を開く
+```
+
+> **注意:** `file://` では SharedArrayBuffer の制限により動作しません。必ずローカルサーバー経由でアクセスしてください。
 
 **依存関係**
 - C++20
 - CMake 3.25 以上
-- raylib 5.5（CMake の FetchContent で取得）
+- raylib 5.5（CMake の FetchContent で自動取得）
+- Web ビルドのみ: Emscripten SDK（`emcmake` が使えること）
+- Windows ビルドのみ: Visual Studio 2022 または MinGW-w64
 
 **ディレクトリ構成（抜粋）**
 - `src/main.cpp`: ゲーム本体
