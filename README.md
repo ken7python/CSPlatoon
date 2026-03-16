@@ -66,36 +66,42 @@ sh buildMac.sh
 
 #### 必要環境
 - CMake 3.25 以上
-- Visual Studio 2022（Desktop development with C++ ワークロード）または MinGW-w64 + Ninja
+- 以下のいずれか:
+  - **MinGW-w64**（`gcc`/`g++` が PATH に通っていること）
+  - **MSVC**（Visual Studio 2022 の「C++ によるデスクトップ開発」ワークロードと Developer Command Prompt）
 
-#### ビルド手順（Visual Studio / MSVC）
+#### 付属スクリプト（自動判別）
 
-```bat
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release
-```
+`gcc` が PATH にあれば MinGW、なければ NMake を自動選択します。
 
-または付属スクリプトを使用:
 ```bat
 buildWin.bat
 ```
 
-成果物は `build\Release\` に生成されます:
-- `CSplatoon.exe`
-- `assets\`（自動コピー済み）
-
-実行:
+ツールチェーンを明示する場合:
 ```bat
-build\Release\CSplatoon.exe
+buildWin.bat mingw    :: MinGW Makefiles を強制
+buildWin.bat nmake    :: NMake Makefiles を強制（Developer Command Prompt で実行）
 ```
 
-#### MinGW-w64 + Ninja を使う場合
+#### 手動ビルド — MinGW Makefiles
 
 ```bat
-cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release ^
+cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ^
       -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
 cmake --build build
 ```
+
+#### 手動ビルド — NMake Makefiles（Developer Command Prompt）
+
+```bat
+cmake -S . -B build -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
+成果物は `build\` に生成されます:
+- `CSplatoon.exe`
+- `assets\`（自動コピー済み）
 
 > **注意:** `WIN32` サブシステムが CMakeLists.txt で設定済みのためコンソールウィンドウは表示されません。デバッグ時は `-DCMAKE_BUILD_TYPE=Debug` を使ってください。
 
