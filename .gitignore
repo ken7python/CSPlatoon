@@ -6,10 +6,4 @@ src/a.out
 src/game
 src/assets
 
-build-web/CMakeCache.txt
-build-web/CMakeFiles/
-build-web/CPackConfig.cmake
-build-web/CPackSourceConfig.cmake
-build-web/Makefile
-build-web/_deps/
-build-web/cmake_install.cmake
+build-web/
