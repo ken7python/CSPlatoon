@@ -28,8 +28,11 @@ const int screenHeight = 720;
 // 弾の最大数
 const int bulletsMax = 5;
 
-// ドットサイズ
-const int dotSize = 5;
+// ドットサイズ (Webビルド時は DOT_SIZE=10 が CMake から渡される)
+#ifndef DOT_SIZE
+#define DOT_SIZE 5
+#endif
+const int dotSize = DOT_SIZE;
 
 // プレイヤー引数クラス
 class pArg
@@ -850,7 +853,7 @@ int main()
     // BGM・効果音ロード（ゲーム開始時に一括ロード）
     Music opening = LoadMusicStream("assets/opening.mp3");
     Music ending = LoadMusicStream("assets/ending.mp3");
-    Music bgm = LoadMusicStream("assets/bgm.mp3");
+    Music bgm = LoadMusicStream("assets/BGM.mp3");
     Sound coll = LoadSound("assets/coll.mp3");
     SetSoundVolume(coll, 10.0f);
     Sound sShot = LoadSound("assets/shot.mp3");
@@ -864,8 +867,8 @@ int main()
     Sound sStart = LoadSound("assets/start.mp3");
     Sound sCountdown = LoadSound("assets/321.mp3");
     Sound sEnd = LoadSound("assets/end.mp3");
-    Sound sRedWin = LoadSound("assets/redWinner.wav");
-    Sound sBlueWin = LoadSound("assets/blueWinner.wav");
+    Sound sRedWin = LoadSound("assets/RedWinner.wav");
+    Sound sBlueWin = LoadSound("assets/BlueWinner.wav");
     Sound sRetry = LoadSound("assets/Retry.mp3");
     SetSoundVolume(sStart, 2.5f);
     SetSoundVolume(sCountdown, 2.5f);
